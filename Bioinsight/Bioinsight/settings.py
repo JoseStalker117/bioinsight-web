@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    #Mis aplicaciones
+    'Webpage',
 ]
 
 MIDDLEWARE = [
@@ -103,7 +106,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-LANGUAGE_CODE = 'es-us'
+LANGUAGE_CODE = 'es-mx'
 
 TIME_ZONE = 'America/Mexico_City'
 
