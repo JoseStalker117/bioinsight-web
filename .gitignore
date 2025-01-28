@@ -1,1 +1,5 @@
 /Bioinsight/firebase_config.py
+/Bioinsight/__pycache__
+/Webpage/__pycache__
+/Webpage/migrations
+db.sqlite3
