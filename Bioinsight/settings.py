@@ -25,7 +25,13 @@ SECRET_KEY = 'supercalifragilisticoexpialidoso-@8ynil!u03ni(ei9k4ap-nu)l9m7fy)uj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Añade tu IP local
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '192.168.0.2',  # Reemplaza X con tu número de IP local
+    '192.168.1.224',
+]
 
 
 # Application definition
