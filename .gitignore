@@ -3,3 +3,5 @@
 /Webpage/__pycache__
 /Webpage/migrations
 db.sqlite3
+/react
+/venv

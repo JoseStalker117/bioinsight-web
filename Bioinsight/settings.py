@@ -31,6 +31,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '192.168.0.2',  # Reemplaza X con tu número de IP local
     '192.168.1.224',
+    '192.168.56.1',
     '192.168.137.1',
 ]
 
@@ -69,7 +70,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / 'react-app/dist',
+            BASE_DIR / 'Webpage/dist',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -131,10 +132,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/assets/'
 
 STATICFILES_DIRS = [
-    BASE_DIR / 'react-app/dist',
+    BASE_DIR / 'Webpage/dist/assets',
 ]
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
