@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     #Mis aplicaciones
     'Webpage',
     'corsheaders',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

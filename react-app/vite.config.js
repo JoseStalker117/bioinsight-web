@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     historyApiFallback: true,
   },
-  base: '/static/',
+  base: '/assets/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
