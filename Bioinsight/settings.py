@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     
     #Mis aplicaciones
     'Webpage',
+    'rest',
     'corsheaders',
     'rest_framework',
 ]
@@ -155,3 +156,7 @@ CORS_ALLOW_CREDENTIALS = True
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#SESSION_COOKIE_SECURE = True
+#CSRF_COOKIE_SECURE = True
+#SECURE_SSL_REDIRECT = False
