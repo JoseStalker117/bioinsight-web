@@ -69,7 +69,7 @@
 
             if (response.ok) {
                 const data = await response.json();
-                document.cookie = `idToken=${data.token}; path=/`; // Almacena el token en una cookie
+                document.cookie = `idToken=${data.idToken}; path=/`; // Almacena el token en una cookie
                 alert('Login exitoso');
             } else {
                 alert('Error en el login');
@@ -79,7 +79,7 @@
         async function fetchModbusData() {
             const idToken = getCookie('idToken'); // Obtiene el token de la cookie
             const response = await fetch('http://127.0.0.1:8000/rest/modbus', { // Reemplaza con la URL de tu API Modbus
-                method: 'POST',
+                method: 'GET', // Cambiado a GET
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${idToken}` // Envía el token en el encabezado de autorización

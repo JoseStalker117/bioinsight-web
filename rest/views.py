@@ -44,7 +44,7 @@ class Login(APIView):
             id_token = user['idToken']  # Obtén el idToken
 
             # Establece la cookie sin HttpOnly y Secure
-            response = Response({'message': 'Login exitoso'}, status=status.HTTP_200_OK)
+            response = Response({'message': 'Login exitoso', 'idToken': id_token}, status=status.HTTP_200_OK)
             response.set_cookie(
                 key='idToken',
                 value=id_token,
@@ -58,13 +58,15 @@ class Login(APIView):
 
 
 class Querry(APIView):
-    def post(self, request):
-        token = request.data.get('idToken')  # Cambiado para obtener el token del encabezado
-        if not token:
+    def get(self, request):
+        id_token = request.COOKIES.get('idToken')
+
+        if not id_token:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         try:
-            data = database.child("Modbus").get(token)  # Cambia "nombre_de_la_colección" por el nombre real
+            # Realiza la consulta a la base de datos
+            data = firebase.database().get(id_token)  # Cambia "Modbus" por el nombre de tu colección
             return Response(data.val(), status=status.HTTP_200_OK)
         except Exception as e:
             print('Error al consultar la base de datos:', e)
