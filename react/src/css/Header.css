@@ -1,0 +1,119 @@
+:root {
+    --color-header: #f2f2f2;
+    --color-text: black;
+}
+
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--color-header);
+    padding: 0 20px;
+    height: 64px;
+    overflow: hidden;
+    box-shadow: 0px 0.1px 0px black;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    min-width: 180px;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+    font-size: 0px;
+    font-weight: bold;
+}
+
+.project-name {
+    color: var(--color-text);
+    font-size: 26px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.menu {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    background-color: var(--color-header);
+    min-width: 300px;
+}
+
+.menu .ant-menu-item {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+.menu-actions {
+    display: flex;
+    align-items: center;
+    padding: 50px;
+}
+
+.login-btn {
+    background: #f2f2f2;
+    box-shadow: 1px 1px 4px rgb(213, 208, 208);
+    border: none;
+    color: black;
+    font-weight: bold;
+    transition: 0.3s;
+    white-space: nowrap;
+}
+
+.login-btn:hover {
+    background: black  !important;
+    color: #f2f2f2;
+}
+
+.menu-btn {
+    display: none;
+    color: var(--color-text);
+}
+
+@media (max-width: 1024px) {
+    .menu {
+        display: none;
+    }
+
+    .menu-btn {
+        display: block;
+    }
+
+    .menu-actions {
+        width: auto;
+    }
+}
+
+@media (max-width: 1025px) {
+    .app-header {
+        padding: 0 10px;
+    }
+
+    .logo-container {
+        min-width: 140px;
+    }
+
+    .login-btn {
+        font-size: 24px;
+        padding: 5px 10px;
+        display: none;
+    }
+
+    .menu-actions {
+        flex-grow: 1;
+        justify-content: flex-end; 
+    }
+
+    .menu-btn {
+        display: block;
+    }
+}
