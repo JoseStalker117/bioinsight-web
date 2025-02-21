@@ -3,5 +3,5 @@
 set "djangoPath=%~dp0"
 set "vitePath=%~dp0\react"
 
-start cmd /k "cd /d "%djangoPath%" && call ./venv/Scripts/activate && python manage.py runserver"
-start cmd /k "cd /d "%vitePath%" && npm run dev"
+start powershell -NoExit -Command "cd '%djangoPath%' ; .\venv\Scripts\Activate.ps1 ; python manage.py runserver"
+start powershell -NoExit -Command "cd '%vitePath%' ; npm install ; npm run dev"

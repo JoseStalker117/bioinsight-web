@@ -1,0 +1,29 @@
+APP_REST
+	Cookies: idToken, userData
+
+	+Render 'test'
+
+	-Post 'Login' OK
+	-Post 'Register OK
+	-Get 'Querry' OK
+	-Post 'Form' OK
+	-Put 'UpdateProfile' OK
+	-Get 'GetProfile' OK
+	
+	*Restablecer contraseña
+	*Oauth de servicios (google, github)
+	*Enviar verificación de correo (@bioinsight?)
+	*Permisos de usuarios para las tablas
+	*CRUD de las tablas (para admin)
+	*Cerrar sesión
+	*Eliminar cuenta
+	*Vincular/Desvincular cuentas oauth
+	*Autorefresh del Token (?)
+	
+	
+APP_Webpage
+	+Template Website OK
+	+Template Dashboard
+	
+	*Página de error 404 de rutas no válidas
+	*Corregir el Inicio de webpage (ruta vacia)
