@@ -7,7 +7,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-/Img
+Img/
 node_modules
 public
 eslint.config.js

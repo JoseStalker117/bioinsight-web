@@ -78,7 +78,7 @@
 
         async function fetchModbusData() {
             const idToken = getCookie('idToken'); // Obtiene el token de la cookie
-            const response = await fetch('http://127.0.0.1:8000/rest/modbus', { // Reemplaza con la URL de tu API Modbus
+            const response = await fetch('http://127.0.0.1:8000/rest/querry', { // Reemplaza con la URL de tu API Modbus
                 method: 'GET', // Cambiado a GET
                 headers: {
                     'Content-Type': 'application/json',
