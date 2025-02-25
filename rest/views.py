@@ -13,23 +13,16 @@ import pytz #Timezone
 from datetime import datetime  # Asegúrate de importar datetime
 
 
-# Pyrebase backend
-firebaseConfig = {
-    "apiKey": "AIzaSyCzw2DUuvxuSRya3RMOFvI4vpyM9leqiwU",
-    "authDomain": "bioinsight23.firebaseapp.com",
-    "databaseURL": "https://bioinsight23-default-rtdb.firebaseio.com",
-    "projectId": "bioinsight23",
-    "storageBucket": "bioinsight23.firebasestorage.app",
-    "messagingSenderId": "24544560116",
-    "appId": "1:24544560116:web:2c108cb5e57f9f9356afa1"
-}
+# Se inicializa Pyrebase y sus variables
+with open(os.path.join(os.path.dirname(__file__), 'Pyrebase.json')) as config_file:
+    firebaseConfig = json.load(config_file)
 firebase = pyrebase.initialize_app(firebaseConfig)
 
 auth = firebase.auth()
 database = firebase.database()
 
-# Firebase Admin API
-cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), 'bioinsight23-firebase-adminsdk-fpdim-54783964e6.json'))
+# Componente Firebase-Admin API y sus variables
+cred = credentials.Certificate(os.path.join(os.path.dirname(__file__), 'Firebase-admin.json'))
 firebase_admin.initialize_app(cred)
 
 firestore = firestore.client()
@@ -69,7 +62,6 @@ class Login(APIView):
 
 class Register(APIView):
     def post(self, request):
-        
         nombre = request.data.get('nombre')
         apellidos = request.data.get('apellidos')
         username = request.data.get('username')
@@ -84,13 +76,16 @@ class Register(APIView):
             email = username + "@bioinsight.com"
             user = auth.create_user_with_email_and_password(email, password)
 
+            # Envía un correo de verificación
+            #auth.send_email_verification(user['idToken'])
+
             user_id = user['localId']
             
             user_data = {
                 'nombre': nombre,
                 'apellidos': apellidos,
                 'username': username,
-                'creationdate': datetime.datetime.now(pytz.timezone('America/Mexico_City')),# Ajusta a la zona horaria -6
+                'creationdate': datetime.now(pytz.timezone('America/Mexico_City')),# Ajusta a la zona horaria -6
                 'admin': False,
                 'foto': 0
             }
@@ -146,7 +141,7 @@ class Form(APIView):
                 'nombre': nombre,
                 'email': email,
                 'mensaje': mensaje,
-                'fecha': datetime.datetime.now(pytz.timezone('America/Mexico_City'))
+                'fecha': datetime.now(pytz.timezone('America/Mexico_City'))
             }
             firestore.collection('contacto').add(contacto_data)  # Agrega el documento a Firestore
 
@@ -238,3 +233,181 @@ class GetProfile(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+class ResetPassword(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+
+        if not email:
+            return Response({'error': 'El correo electrónico es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Envía un correo de restablecimiento de contraseña
+            auth.send_password_reset_email(email)
+
+            return Response({'message': 'Correo de restablecimiento de contraseña enviado exitosamente'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ResendEmail(APIView):
+    def post(self, request):
+        id_token = request.COOKIES.get('idToken')
+
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Verifica el token y obtiene el uid del usuario
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            user_id = decoded_token['uid']
+
+            # Obtiene el correo electrónico del usuario
+            user = auth.get_user(user_id)
+            email = user.email
+
+            # Envía un correo de verificación
+            auth.send_email_verification(user['idToken'])
+
+            return Response({'message': 'Correo de verificación reenviado exitosamente'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class Logout(APIView):
+    def post(self, request):
+        response = Response({'message': 'Sesión cerrada exitosamente'}, status=status.HTTP_200_OK)
+        response.delete_cookie('idToken')
+        response.delete_cookie('userData')
+        return response
+
+
+class DeleteAccount(APIView):
+    def post(self, request):
+        id_token = request.COOKIES.get('idToken')
+
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            user_id = decoded_token['uid']
+            
+            firebase_admin.auth.delete_user(user_id)
+
+            response = Response({'message': 'Cuenta eliminada exitosamente'}, status=status.HTTP_200_OK)
+            response.delete_cookie('idToken')
+            response.delete_cookie('userData')
+            return response
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+           
+
+class LinkOAuth(APIView):
+    def post(self, request):
+        id_token = request.COOKIES.get('idToken')
+        oauth_token = request.data.get('oauth_token')  # Token de OAuth de la aplicación de terceros
+        provider = request.data.get('provider')  # Nombre del proveedor (ej. 'google', 'facebook')
+        phone_number = request.data.get('phone_number')  # Número de teléfono a vincular
+
+        if not id_token or not provider:
+            return Response({'error': 'Token de autorización y proveedor son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Verifica el token y obtiene el uid del usuario
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            user_id = decoded_token['uid']
+
+            # Vincula la cuenta de OAuth y el número de teléfono al usuario
+            if provider == 'google':
+                # Lógica para vincular cuenta de Google
+                pass  # Implementa la lógica específica para Google
+            elif provider == 'facebook':
+                # Lógica para vincular cuenta de Facebook
+                pass  # Implementa la lógica específica para Facebook
+            
+            # Vincula el número de teléfono
+            if phone_number:
+                auth.update_user(user_id, phone_number=phone_number)
+
+            return Response({'message': f'Cuenta de {provider} y número de teléfono vinculados exitosamente'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class UnlinkOAuth(APIView):
+    def post(self, request):
+        id_token = request.COOKIES.get('idToken')
+        provider = request.data.get('provider')  # Nombre del proveedor (ej. 'google', 'facebook')
+
+        if not id_token or not provider:
+            return Response({'error': 'Token de autorización y proveedor son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Verifica el token y obtiene el uid del usuario
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            user_id = decoded_token['uid']
+
+            # Desvincula la cuenta de OAuth del usuario
+            if provider == 'google':
+                # Lógica para desvincular cuenta de Google
+                pass  # Implementa la lógica específica para Google
+            elif provider == 'facebook':
+                # Lógica para desvincular cuenta de Facebook
+                pass  # Implementa la lógica específica para Facebook
+            
+            # Desvincula el número de teléfono (opcionalmente puedes establecerlo como None)
+            auth.update_user(user_id, phone_number=None)
+
+            return Response({'message': f'Cuenta de {provider} desvinculada y número de teléfono eliminado exitosamente'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class RTD(APIView):
+    def get(self, request, module_name, doc_data):
+        try:
+            # Obtiene los datos del dispositivo específico en el módulo
+            data = database.child(module_name).child(doc_data).get()
+            if not data.val():
+                return Response({'error': 'Dispositivo no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data.val(), status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def post(self, request, module_name):
+        doc_data = request.data.get('doc_data')
+        data = request.data.get('data')
+
+        if not doc_data or not data:
+            return Response({'error': 'ID del dispositivo y datos son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Crea o actualiza los datos del dispositivo en el módulo
+            database.child(module_name).child(doc_data).set(data)
+            return Response({'message': 'Datos guardados exitosamente'}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def put(self, request, module_name, doc_data):
+        data = request.data.get('data')
+
+        if not data:
+            return Response({'error': 'Datos son requeridos para actualizar'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Actualiza los datos del dispositivo en el módulo
+            database.child(module_name).child(doc_data).update(data)
+            return Response({'message': 'Datos actualizados exitosamente'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def delete(self, request, module_name, doc_data):
+        try:
+            # Elimina los datos del dispositivo en el módulo
+            database.child(module_name).child(doc_data).delete()
+            return Response({'message': 'Datos eliminados exitosamente'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        

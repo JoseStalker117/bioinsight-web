@@ -1,107 +1,15 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pruebas</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        form {
-            background: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #5cb85c;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-        }
-        button:hover {
-            background-color: #4cae4c;
-        }
-        #response {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-            white-space: pre-wrap; /* Mantiene el formato del JSON */
-        }
-    </style>
-    <script>
-        async function login(event) {
-            event.preventDefault(); // Evita el envío del formulario por defecto
-            const email = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            //TODO: cambiar a variable global
-            const response = await fetch('http://127.0.0.1:8000/rest/login', { 
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                document.cookie = `idToken=${data.idToken}; path=/`; // Almacena el token en una cookie
-                alert('Login exitoso');
-            } else {
-                alert('Error en el login');
-            }
-        }
-
-        async function fetchModbusData() {
-            const idToken = getCookie('idToken'); // Obtiene el token de la cookie
-            const response = await fetch('http://127.0.0.1:8000/rest/querry', { // Reemplaza con la URL de tu API Modbus
-                method: 'GET', // Cambiado a GET
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}` // Envía el token en el encabezado de autorización
-                },
-                credentials: 'include' // Asegúrate de incluir las credenciales para enviar cookies
-            });
-            if (response.ok) {
-                const data = await response.json();
-                document.getElementById('response').textContent = JSON.stringify(data, null, 2); // Muestra el JSON en el placeholder
-            } else {
-                document.getElementById('response').textContent = 'Error al consultar la API Modbus';
-            }
-        }
-
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-    </script>
+    <link rel="stylesheet" href="{% static 'styles.css' %}"> <!-- Importa el CSS -->
+    <script src="{% static 'script.js' %}" defer></script> <!-- Importa el JS -->
 </head>
 <body>
+    <h2>Login de Usuario</h2>
     <form onsubmit="login(event)">
         <label for="username">Usuario:</label>
         <input type="text" id="username" name="username" required>
@@ -112,6 +20,34 @@
         <button type="submit">Iniciar Sesión</button>
         <button type="button" onclick="fetchModbusData()">Consultar Modbus</button> <!-- Botón para consultar Modbus -->
     </form>
+    
+    <h2>Registro de Usuario</h2>
+    <form id="registerForm" onsubmit="event.preventDefault(); registerUser(document.getElementById('regNombre').value, document.getElementById('regApellidos').value, document.getElementById('regUsername').value, document.getElementById('regPassword').value)">
+        <label for="regNombre">Nombre:</label>
+        <input type="text" id="regNombre" required>
+        <label for="regApellidos">Apellidos:</label>
+        <input type="text" id="regApellidos" required>
+        <label for="regUsername">Usuario:</label>
+        <input type="text" id="regUsername" required>
+        <label for="regPassword">Contraseña:</label>
+        <input type="password" id="regPassword" required>
+        <button type="submit">Registrar</button>
+    </form>
+
+    <h2>Restablecer Contraseña</h2>
+    <form id="resetPasswordForm" onsubmit="event.preventDefault(); resetPassword(document.getElementById('resetEmail').value)">
+        <label for="resetEmail">Correo Electrónico:</label>
+        <input type="email" id="resetEmail" required>
+        <button type="submit">Restablecer Contraseña</button>
+    </form>
+
+    <h2>Perfil de Usuario</h2>
+    <button onclick="getProfile()">Obtener Perfil</button>
+    <button onclick="updateProfile('Nuevo Nombre', 'Nuevo Apellido', 1)">Actualizar Perfil</button>
+    <button onclick="logout()">Cerrar Sesión</button>
+    <button onclick="deleteAccount()">Eliminar Cuenta</button>
+
+    <br>
     <div id="response"></div> <!-- Placeholder para mostrar la respuesta JSON -->
 </body>
 </html>
