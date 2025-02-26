@@ -9,45 +9,117 @@
     <script src="{% static 'script.js' %}" defer></script> <!-- Importa el JS -->
 </head>
 <body>
-    <h2>Login de Usuario</h2>
-    <form onsubmit="login(event)">
-        <label for="username">Usuario:</label>
-        <input type="text" id="username" name="username" required>
-        <br>
-        <label for="password">Contraseña:</label>
-        <input type="password" id="password" name="password" required>
-        <br>
-        <button type="submit">Iniciar Sesión</button>
-        <button type="button" onclick="fetchModbusData()">Consultar Modbus</button> <!-- Botón para consultar Modbus -->
-    </form>
+    <div class="parent">
+        <div class="form-container">
+            <!-- Registrar usuario -->
+            <h2>1. Registro de Usuario</h2>
+            <form id="registerForm" onsubmit="event.preventDefault(); registerUser(document.getElementById('regNombre').value, document.getElementById('regApellidos').value, document.getElementById('regUsername').value, document.getElementById('regPassword').value)">
+                <label for="regNombre">Nombre:</label>
+                <input type="text" id="regNombre" required>
+                <label for="regApellidos">Apellidos:</label>
+                <input type="text" id="regApellidos" required>
+                <label for="regUsername">Usuario:</label>
+                <input type="text" id="regUsername" required>
+                <label for="regPassword">Contraseña:</label>
+                <input type="password" id="regPassword" required>
+                <button type="submit">Registrar</button>
+            </form>
+
+            <!-- Login usuario -->
+            <h2>2. Login de Usuario</h2>
+            <form onsubmit="login(event)">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" name="username" required>
+                <br>
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" required>
+                <br>
+                <button type="submit">Iniciar Sesión</button>
+                <button type="button" onclick="Querry()">Consultar Modbus</button> 
+            </form>
+            
+            <!-- Cookie de datos de usuario -->
+            <h2>3. Obtener Perfil</h2>
+            <form id="getProfileForm" onsubmit="event.preventDefault(); getProfile()">
+                <button type="submit">Obtener Perfil</button>
+            </form>
+
+            <!-- Boton de Querry data -->
+            <h2>4. Consultar Datos</h2>
+            <form id="queryForm" onsubmit="event.preventDefault(); DatabaseRTD()">
+                <label for="tableSelector">Selecciona la tabla:</label>
+                <select id="tableSelector">
+                    <option value="modbus">Modbus</option>
+                    <option value="modulo1">Módulo 1</option>
+                    <option value="modulo2">Módulo 2</option>
+                </select>
+                
+                <label for="nodeInput">Nodo a editar:</label>
+                <input type="text" id="nodeInput" placeholder="Ingrese el nodo">
+                
+                <label for="httpMethodSelector">Selecciona el método HTTP:</label>
+                <select id="httpMethodSelector">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+                
+                <label for="jsonInput">Datos en formato JSON:</label>
+                <textarea id="jsonInput" rows="4" placeholder='{"key": "value"}'></textarea>
+                
+                <button type="submit">Ejecutar</button>
+            </form>
+
+            <!-- Actualizar perfil de usuario -->
+            <h2>5. Actualizar Perfil</h2>
+            <form id="updateProfileForm" onsubmit="event.preventDefault(); updateProfile()">
+                <label for="updateNombre">Nuevo Nombre:</label>
+                <input type="text" id="updateNombre">
+                <label for="updateApellidos">Nuevos Apellidos:</label>
+                <input type="text" id="updateApellidos">
+                <label for="updateFoto">Foto (ID):</label>
+                <input type="number" id="updateFoto">
+                <button type="submit">Actualizar Perfil</button>
+            </form>
+            
+            <!-- --------Requisitos no funcionales-------- -->
+
+            <!-- Restablecer contraseña -->
+            <h2>A1 - Restablecer Contraseña</h2>
+            <form id="resetPasswordForm" onsubmit="event.preventDefault(); resetPassword(document.getElementById('resetEmail').value)">
+                <label for="resetEmail">Correo Electrónico:</label>
+                <input type="email" id="resetEmail" required>
+                <button type="submit">Restablecer Contraseña</button>
+            </form>
+
+            <!-- Reenviar Email -->
+            <h2>A2 - Reenviar Verificación de Correo</h2>
+            <form id="resendEmailForm" onsubmit="event.preventDefault(); resendEmail()">
+                <button type="submit">Reenviar Correo de Verificación</button>
+            </form>
+
+            <!-- Cerrar Sesion -->
+            <h2>A3 -Cerrar Sesión</h2>
+            <form id="logoutForm" onsubmit="event.preventDefault(); logout()">
+                <button type="submit">Cerrar Sesión</button>
+            </form>
+
+            <!-- Eliminar cuenta -->
+            <h2>A4 - Eliminar Cuenta</h2>
+            <form id="deleteAccountForm" onsubmit="event.preventDefault(); deleteAccount()">
+                <button type="submit">Eliminar Cuenta</button>
+            </form>
+
+        </div>
+
+        <!-- Visor de datos de respuestas -->
+        <div class="response-container">
+            <h2>Respuestas del Servidor</h2>
+            <div id="response"></div>
+            <div id="httpResponses" style="margin-top: 20px;"></div>
+        </div>
+    </div>
     
-    <h2>Registro de Usuario</h2>
-    <form id="registerForm" onsubmit="event.preventDefault(); registerUser(document.getElementById('regNombre').value, document.getElementById('regApellidos').value, document.getElementById('regUsername').value, document.getElementById('regPassword').value)">
-        <label for="regNombre">Nombre:</label>
-        <input type="text" id="regNombre" required>
-        <label for="regApellidos">Apellidos:</label>
-        <input type="text" id="regApellidos" required>
-        <label for="regUsername">Usuario:</label>
-        <input type="text" id="regUsername" required>
-        <label for="regPassword">Contraseña:</label>
-        <input type="password" id="regPassword" required>
-        <button type="submit">Registrar</button>
-    </form>
-
-    <h2>Restablecer Contraseña</h2>
-    <form id="resetPasswordForm" onsubmit="event.preventDefault(); resetPassword(document.getElementById('resetEmail').value)">
-        <label for="resetEmail">Correo Electrónico:</label>
-        <input type="email" id="resetEmail" required>
-        <button type="submit">Restablecer Contraseña</button>
-    </form>
-
-    <h2>Perfil de Usuario</h2>
-    <button onclick="getProfile()">Obtener Perfil</button>
-    <button onclick="updateProfile('Nuevo Nombre', 'Nuevo Apellido', 1)">Actualizar Perfil</button>
-    <button onclick="logout()">Cerrar Sesión</button>
-    <button onclick="deleteAccount()">Eliminar Cuenta</button>
-
-    <br>
-    <div id="response"></div> <!-- Placeholder para mostrar la respuesta JSON -->
 </body>
 </html>

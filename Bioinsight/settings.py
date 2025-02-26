@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     #Vite DEV testing
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -146,11 +147,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 CORS_ALLOW_ALL_ORIGINS = True  # Solo para desarrollo
 CORS_ALLOW_CREDENTIALS = True
 
-# Más adelante, cuando vayas a producción, cambiarás esto por:
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:5173",
-#     "http://127.0.0.1:5173",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Cambia esto según tu configuración
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -160,3 +159,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #SESSION_COOKIE_SECURE = True
 #CSRF_COOKIE_SECURE = True
 #SECURE_SSL_REDIRECT = False
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']  # Permitir localhost

@@ -44,10 +44,10 @@ class Login(APIView):
         try:
             # Autenticación del usuario con Pyrebase
             user = auth.sign_in_with_email_and_password(email, password)
-            id_token = user['idToken']  # Obtén el idToken
-
-            # Establece la cookie sin HttpOnly y Secure
-            response = Response({'message': 'Login exitoso', 'idToken': id_token}, status=status.HTTP_200_OK)
+            id_token = user['idToken']
+            
+            # Establece la cookie de idToken
+            response = Response({'message': 'Login exitoso del usuario', 'idToken': id_token}, status=status.HTTP_200_OK)
             response.set_cookie(
                 key='idToken',
                 value=id_token,
@@ -89,7 +89,7 @@ class Register(APIView):
                 'admin': False,
                 'foto': 0
             }
-            firestore.collection('usuarios').document(user_id).set(user_data)  # Asegúrate de que esto sea correcto
+            firestore.collection('usuarios').document(user_id).set(user_data)
 
             # Autenticación del usuario para obtener el idToken
             user = auth.sign_in_with_email_and_password(email, password)
@@ -136,14 +136,13 @@ class Form(APIView):
             return Response({'error': 'Todos los campos son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Crea un documento en la colección "contacto"
             contacto_data = {
                 'nombre': nombre,
                 'email': email,
                 'mensaje': mensaje,
                 'fecha': datetime.now(pytz.timezone('America/Mexico_City'))
             }
-            firestore.collection('contacto').add(contacto_data)  # Agrega el documento a Firestore
+            firestore.collection('contacto').add(contacto_data)
 
             return Response({'message': 'Mensaje enviado exitosamente'}, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -258,16 +257,7 @@ class ResendEmail(APIView):
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verifica el token y obtiene el uid del usuario
-            decoded_token = firebase_admin.auth.verify_id_token(id_token)
-            user_id = decoded_token['uid']
-
-            # Obtiene el correo electrónico del usuario
-            user = auth.get_user(user_id)
-            email = user.email
-
-            # Envía un correo de verificación
-            auth.send_email_verification(user['idToken'])
+            auth.send_email_verification(id_token)
 
             return Response({'message': 'Correo de verificación reenviado exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
@@ -293,9 +283,12 @@ class DeleteAccount(APIView):
             decoded_token = firebase_admin.auth.verify_id_token(id_token)
             user_id = decoded_token['uid']
             
+            
             firebase_admin.auth.delete_user(user_id)
+            firestore.collection('usuarios').document(user_id).delete()
 
-            response = Response({'message': 'Cuenta eliminada exitosamente'}, status=status.HTTP_200_OK)
+            response = Response({'message': 'Cuenta eliminada exitosamente(auth y firestore)'}, status=status.HTTP_200_OK)
+            #Elimina las cookies
             response.delete_cookie('idToken')
             response.delete_cookie('userData')
             return response
@@ -364,18 +357,22 @@ class UnlinkOAuth(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-class RTD(APIView):
+class DatabaseRTD(APIView):
+    @csrf_exempt
     def get(self, request, module_name, doc_data):
         try:
+            id_token = request.COOKIES.get('idToken')
             # Obtiene los datos del dispositivo específico en el módulo
-            data = database.child(module_name).child(doc_data).get()
+            data = database.child(module_name).child(doc_data).get(id_token)
             if not data.val():
                 return Response({'error': 'Dispositivo no encontrado'}, status=status.HTTP_404_NOT_FOUND)
             return Response(data.val(), status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @csrf_exempt
     def post(self, request, module_name):
+        id_token = request.COOKIES.get('idToken')
         doc_data = request.data.get('doc_data')
         data = request.data.get('data')
 
@@ -384,12 +381,14 @@ class RTD(APIView):
 
         try:
             # Crea o actualiza los datos del dispositivo en el módulo
-            database.child(module_name).child(doc_data).set(data)
+            database.child(module_name).child(doc_data).set(data, id_token=id_token)
             return Response({'message': 'Datos guardados exitosamente'}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        
+    @csrf_exempt
     def put(self, request, module_name, doc_data):
+        id_token = request.COOKIES.get('idToken')
         data = request.data.get('data')
 
         if not data:
@@ -397,15 +396,17 @@ class RTD(APIView):
 
         try:
             # Actualiza los datos del dispositivo en el módulo
-            database.child(module_name).child(doc_data).update(data)
+            database.child(module_name).child(doc_data).update(data, id_token=id_token)
             return Response({'message': 'Datos actualizados exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        
+    @csrf_exempt
     def delete(self, request, module_name, doc_data):
+        id_token = request.COOKIES.get('idToken')
         try:
             # Elimina los datos del dispositivo en el módulo
-            database.child(module_name).child(doc_data).delete()
+            database.child(module_name).child(doc_data).delete(id_token)
             return Response({'message': 'Datos eliminados exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
