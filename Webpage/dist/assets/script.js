@@ -21,7 +21,10 @@ async function login(event) {
         document.cookie = `idToken=${data.idToken}; path=/`; 
         setTimeout(() => {
             getProfile();
-        }, 3000); // Cambia 2000 a la cantidad de milisegundos que desees
+        }, 1500); // Cambia 2000 a la cantidad de milisegundos que desees
+        // Limpiar los campos del formulario
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
     } else {
         appendHttpResponse(`Error en el login: ${data.error}`);
     }
@@ -41,7 +44,7 @@ async function Querry() {
     const data = await response.json();
     if (response.ok) {
         document.getElementById('response').textContent = JSON.stringify(data, null, 2); // Muestra el JSON en el placeholder
-        appendHttpResponse('Consulta de Modbus exitosa.');
+        appendHttpResponse('Consulta de Database RTD exitosa.');
     } else {
         document.getElementById('response').textContent = 'Error al consultar la API Modbus';
         appendHttpResponse(`Error al consultar la API Modbus: ${data.error}`);
@@ -69,7 +72,11 @@ async function registerUser(nombre, apellidos, username, password) {
         appendHttpResponse(`Registro exitoso: Usuario ${username} registrado`);
         setTimeout(() => {
             getProfile();
-        }, 3000); 
+        }, 1500); 
+        // Limpiar los campos del formulario
+        document.getElementById('updateNombre').value = '';
+        document.getElementById('updateApellidos').value = '';
+        document.getElementById('updateFoto').value = '';
     } else {
         appendHttpResponse(`Error en el registro: ${data.error}`);
     }
@@ -88,6 +95,8 @@ async function resetPassword(email) {
     const data = await response.json();
     if (response.ok) {
         appendHttpResponse(`Correo de restablecimiento enviado a: ${email}`);
+        // Limpiar el campo del formulario
+        document.getElementById('emailInput').value = ''; // Asegúrate de que el ID sea correcto
     } else {
         appendHttpResponse(`Error al restablecer contraseña: ${data.error}`);
     }
@@ -128,6 +137,13 @@ async function updateProfile() {
     const data = await response.json();
     if (response.ok) {
         appendHttpResponse('Perfil actualizado exitosamente');
+        setTimeout(() => {
+            getProfile();
+        }, 1500); 
+        // Limpiar los campos del formulario
+        document.getElementById('updateNombre').value = '';
+        document.getElementById('updateApellidos').value = '';
+        document.getElementById('updateFoto').value = '';
     } else {
         appendHttpResponse(`Error al actualizar perfil: ${data.error}`);
     }
@@ -151,6 +167,12 @@ async function logout() {
 
 
 async function deleteAccount() {
+    // Confirmar la eliminación de la cuenta
+    const confirmDelete = confirm('¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer.');
+    if (!confirmDelete) {
+        return;
+    }
+
     const response = await fetch('http://127.0.0.1:8000/rest/delete-account', {
         method: 'POST',
         credentials: 'include',
@@ -191,6 +213,10 @@ async function sendContactMessage(nombre, email, mensaje) {
     const data = await response.json();
     if (response.ok) {
         appendHttpResponse(`Mensaje de contacto enviado exitosamente por: ${nombre}`);
+        // Limpiar los campos del formulario
+        document.getElementById('contactNombre').value = ''; // Asegúrate de que el ID sea correcto
+        document.getElementById('contactEmail').value = ''; // Asegúrate de que el ID sea correcto
+        document.getElementById('contactMensaje').value = ''; // Asegúrate de que el ID sea correcto
     } else {
         appendHttpResponse(`Error al enviar mensaje de contacto: ${data.error}`);
     }
@@ -349,5 +375,18 @@ function appendHttpResponse(message) {
     const maxResponses = 10;
     while (httpResponsesDiv.children.length > maxResponses) {
         httpResponsesDiv.removeChild(httpResponsesDiv.lastChild);
+    }
+}
+
+function loadUserData() {
+    const userData = JSON.parse(getCookie('userData')); // Obtener y parsear la cookie
+    if (userData) { // Verificar que userData exista
+        document.getElementById('updateNombre').value = userData.nombre || ''; // Asignar nombre
+        document.getElementById('updateApellidos').value = userData.apellidos || ''; // Asignar apellidos
+        document.getElementById('updateFoto').value = userData.foto || ''; // Asignar ID de foto
+        appendHttpResponse('Datos recolectados y remplazados');
+    } else {
+        alert('No se encontraron datos de usuario.');
+        appendHttpResponse('No hay Datos para mostrar');
     }
 }

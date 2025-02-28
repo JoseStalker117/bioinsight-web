@@ -20,4 +20,9 @@ urlpatterns = [
     path('link-oauth', LinkOAuth.as_view(), name='Link-OAuth'),
     path('unlink-oauth', UnlinkOAuth.as_view(), name='Unlink-OAuth'),
     path('rtd', DatabaseRTD.as_view(), name='RTD-Crud'),
+    
+    #   >>>     URLS de Luis xddd   <<<
+    path('modbusdata', ModbusData.as_view(), name='ModbusData'),
+    path('modulo1', Modulo1.as_view(), name='Modulo1'),
+    path('modulo2', Modulo2.as_view(), name='Modulo2'),
 ]

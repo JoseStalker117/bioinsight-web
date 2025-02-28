@@ -4,13 +4,10 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-import pyrebase
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
-import json, datetime
-import os
-import pytz #Timezone
-from datetime import datetime  # Asegúrate de importar datetime
+import json, datetime, os, pytz, pyrebase
+from datetime import datetime
 
 
 # Se inicializa Pyrebase y sus variables
@@ -67,12 +64,11 @@ class Register(APIView):
         username = request.data.get('username')
         password = request.data.get('password')
 
-        # Verifica que se hayan proporcionado todos los datos requeridos
         if not nombre or not apellidos or not username or not password:
             return Response({'error': 'Todos los campos son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Registra al nuevo usuario con Pyrebase
+            # Crea el usuario Auth de firebase.
             email = username + "@bioinsight.com"
             user = auth.create_user_with_email_and_password(email, password)
 
@@ -85,7 +81,7 @@ class Register(APIView):
                 'nombre': nombre,
                 'apellidos': apellidos,
                 'username': username,
-                'creationdate': datetime.now(pytz.timezone('America/Mexico_City')),# Ajusta a la zona horaria -6
+                'creationdate': datetime.now(pytz.timezone('America/Mexico_City')),
                 'admin': False,
                 'foto': 0
             }
@@ -117,11 +113,9 @@ class Querry(APIView):
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Realiza la consulta a la base de datos
             data = firebase.database().get(id_token)
             return Response(data.val(), status=status.HTTP_200_OK)
         except Exception as e:
-            print('Error al consultar la base de datos:', e)
             return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
@@ -131,7 +125,6 @@ class Form(APIView):
         email = request.data.get('email')
         mensaje = request.data.get('mensaje')
 
-        # Verifica que se hayan proporcionado todos los datos requeridos
         if not nombre or not email or not mensaje:
             return Response({'error': 'Todos los campos son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -157,7 +150,6 @@ class UpdateProfile(APIView):
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verifica el token y obtiene el uid del usuario
             decoded_token = firebase_admin.auth.verify_id_token(id_token)
             user_id = decoded_token['uid']
 
@@ -169,7 +161,7 @@ class UpdateProfile(APIView):
             # Convierte la clave foto a un tipo de dato numérico, si es posible
             if foto is not None:
                 try:
-                    foto = int(foto)  # Asegúrate de que foto sea un número entero
+                    foto = int(foto)
                 except ValueError:
                     return Response({'error': 'El campo foto debe ser un número entero'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -202,7 +194,6 @@ class GetProfile(APIView):
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verifica el token y obtiene el uid del usuario
             decoded_token = firebase_admin.auth.verify_id_token(id_token)
             user_id = decoded_token['uid']
 
@@ -412,3 +403,86 @@ class DatabaseRTD(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         
+# >>>   Métodos de Luis xddd    <<<
+class ModbusData(APIView):
+    def get(self, request):
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = auth.get_account_info(id_token)  
+            uid = decoded_token['users'][0]['localId']
+            print(f"UID del usuario autenticado: {uid}") 
+            data = database.child('Modbus').get(token=id_token)   
+            if data.each():
+                result = {item.key(): item.val() for item in data.each()} 
+                return Response(result, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'No se encontraron datos en la base de datos'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            print(f'Error al consultar la base de datos: {e}')
+            return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class Modulo1(APIView):
+    def get(self, request):
+        id_token = request.headers.get('Authorization')
+
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = auth.get_account_info(id_token)  
+            uid = decoded_token['users'][0]['localId']
+            print(f"UID del usuario autenticado: {uid}") 
+
+            data = database.child('Modulo1').get(token=id_token)   
+
+            if data.each():
+                result = {item.key(): item.val() for item in data.each()}
+                return Response(result, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'No se encontraron datos en la base de datos'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            print(f'Error al consultar la base de datos: {e}')
+            return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+  
+        
+class Modulo2(APIView):
+    def get(self, request):
+        id_token = request.headers.get('Authorization')
+
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = auth.get_account_info(id_token)  
+            uid = decoded_token['users'][0]['localId']
+            print(f"UID del usuario autenticado: {uid}") 
+
+            data = database.child('Modulo2').get(token=id_token)   
+
+            if data.each():
+                result = [
+                    {**item.val(), "id": item.key(), "timestamp": int(item.key())}
+                    for item in data.each()
+                ]
+                return Response(result, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'No se encontraron datos en la base de datos'}, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            print(f'Error al consultar la base de datos: {e}')
+            return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+#hello

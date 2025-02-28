@@ -16,18 +16,23 @@ body {
     grid-template-rows: 1fr; /* Single row */
     grid-column-gap: 10px; /* Space between columns */
     grid-row-gap: 0px; /* No space between rows */
-    margin: 20px; /* External margin */
-    padding: 20px; /* Internal margin */
+    margin: 0; /* Cambiado a 0 para abarcar toda la pantalla */
+    padding: 0; /* Cambiado a 0 para abarcar toda la pantalla */
+    height: 100vh; /* Asegura que el contenedor ocupe toda la altura de la pantalla */
     background-color: white; /* Optional: background color for better visibility */
     border-radius: 5px; /* Optional: rounded corners */
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Optional: shadow for depth */
 }
 
 .form-container {
+    overflow-y: auto; /* Permitir desplazamiento vertical */
+    height: 100%; /* Asegura que ocupe toda la altura del contenedor */
     padding: 20px;
 }
 
 .response-container {
+    overflow-y: auto; /* Permitir desplazamiento vertical */
+    height: 100%; /* Asegura que ocupe toda la altura del contenedor */
     padding: 20px;
     border-left: 1px solid #ccc; /* Optional: add a border between columns */
 }
