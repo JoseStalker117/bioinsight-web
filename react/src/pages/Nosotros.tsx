@@ -3,9 +3,9 @@ import * as React from "react";
 import { Typography } from "antd";
 import { useInView } from 'react-intersection-observer';
 import "../css/Nosotros.css";
-import UANL from '../Img/UANL-FA01.webp';
-import UANL2 from '../Img/UANL-FA02.webp';
-import UniNombre from '../Img/UniversidadNombre.jpeg';
+// import UANL from '../Img/UANL-FA01.webp';
+// import UANL2 from '../Img/UANL-FA02.webp';
+// import UniNombre from '../Img/UniversidadNombre.jpeg';
 
 const { Title, Paragraph } = Typography;
 
@@ -57,7 +57,7 @@ function Nosotros() {
             en un producto resultante que llamamos el Módulo Modbus.
           </Paragraph>
         </div>
-        <img src={UniNombre} alt="Prueba 1" className="section-image" />
+        {/* <img src={UniNombre} alt="Prueba 1" className="section-image" /> */}
       </section>
 
       {/* Misión */}
@@ -72,7 +72,7 @@ function Nosotros() {
             necesidades de nuestros clientes, siempre aplicando las mejores tecnologías que el mercado ofrece a un costo accesible.
           </Paragraph>
         </div>
-        <img src={UANL} alt="Misión" className="section-image" />
+        {/* <img src={UANL} alt="Misión" className="section-image" /> */}
       </section>
 
       {/* Visión */}
@@ -87,7 +87,7 @@ function Nosotros() {
             consumidores, ofreciendo un servicio simple y fácil de instalar y operar, a la par que seguimos aplicando nuevas tecnologías que entren al mercado.
           </Paragraph>
         </div>
-        <img src={UANL2} alt="Visión" className="section-image" />
+        {/* <img src={UANL2} alt="Visión" className="section-image" /> */}
       </section>
     </div>
   );

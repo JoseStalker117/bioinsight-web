@@ -350,10 +350,15 @@ class UnlinkOAuth(APIView):
 
 class DatabaseRTD(APIView):
     @csrf_exempt
-    def get(self, request, module_name, doc_data):
+    def get(self, request):
+        id_token = request.COOKIES.get('idToken')
+        module_name = request.query_params.get('module_name')  # Obtener desde la URL
+        doc_data = request.query_params.get('doc_data')  # Obtener desde la URL
+        
+        if not doc_data:
+            return Response({'error': 'doc_data es requerido para consultar el nodo child'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            id_token = request.COOKIES.get('idToken')
-            # Obtiene los datos del dispositivo específico en el módulo
             data = database.child(module_name).child(doc_data).get(id_token)
             if not data.val():
                 return Response({'error': 'Dispositivo no encontrado'}, status=status.HTTP_404_NOT_FOUND)
@@ -362,42 +367,48 @@ class DatabaseRTD(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @csrf_exempt
-    def post(self, request, module_name):
+    def post(self, request):
         id_token = request.COOKIES.get('idToken')
+        module_name = request.data.get('module_name')
         doc_data = request.data.get('doc_data')
         data = request.data.get('data')
 
-        if not doc_data or not data:
-            return Response({'error': 'ID del dispositivo y datos son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+        if not module_name or not doc_data or not data:
+            return Response({'error': 'module_name, doc_data y data son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Crea o actualiza los datos del dispositivo en el módulo
-            database.child(module_name).child(doc_data).set(data, id_token=id_token)
+            database.child(module_name).child(doc_data).set(data, token=id_token)
             return Response({'message': 'Datos guardados exitosamente'}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
     @csrf_exempt
-    def put(self, request, module_name, doc_data):
+    def put(self, request):
         id_token = request.COOKIES.get('idToken')
+        module_name = request.data.get('module_name')
+        doc_data = request.data.get('doc_data')
         data = request.data.get('data')
 
-        if not data:
-            return Response({'error': 'Datos son requeridos para actualizar'}, status=status.HTTP_400_BAD_REQUEST)
+        if not module_name or not doc_data or not data:
+            return Response({'error': 'module_name, doc_data y data son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Actualiza los datos del dispositivo en el módulo
-            database.child(module_name).child(doc_data).update(data, id_token=id_token)
+            database.child(module_name).child(doc_data).update(data, token=id_token)
             return Response({'message': 'Datos actualizados exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
     @csrf_exempt
-    def delete(self, request, module_name, doc_data):
+    def delete(self, request):
         id_token = request.COOKIES.get('idToken')
+        module_name = request.query_params.get('module_name')  # Obtener desde la URL
+        doc_data = request.query_params.get('doc_data')  # Obtener desde la URL
+
+        if not doc_data:
+            return Response({'error': 'doc_data es requerido para modificar el nodo.'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            # Elimina los datos del dispositivo en el módulo
-            database.child(module_name).child(doc_data).delete(id_token)
+            database.child(module_name).child(doc_data).remove(id_token)
             return Response({'message': 'Datos eliminados exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -406,16 +417,14 @@ class DatabaseRTD(APIView):
 # >>>   Métodos de Luis xddd    <<<
 class ModbusData(APIView):
     def get(self, request):
-        id_token = request.headers.get('Authorization')
-        if id_token and id_token.startswith('Bearer '):
-            id_token = id_token.split('Bearer ')[1]
-        else:
+        # Cambiar para obtener el id_token de la cookie
+        id_token = request.COOKIES.get('idToken')
+        if not id_token:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             decoded_token = auth.get_account_info(id_token)  
             uid = decoded_token['users'][0]['localId']
-            print(f"UID del usuario autenticado: {uid}") 
             data = database.child('Modbus').get(token=id_token)   
             if data.each():
                 result = {item.key(): item.val() for item in data.each()} 
@@ -424,25 +433,17 @@ class ModbusData(APIView):
                 return Response({'error': 'No se encontraron datos en la base de datos'}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
-            print(f'Error al consultar la base de datos: {e}')
             return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         
 class Modulo1(APIView):
     def get(self, request):
-        id_token = request.headers.get('Authorization')
-
-        if id_token and id_token.startswith('Bearer '):
-            id_token = id_token.split('Bearer ')[1]
-        else:
+        id_token = request.COOKIES.get('idToken')
+        if not id_token:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            decoded_token = auth.get_account_info(id_token)  
-            uid = decoded_token['users'][0]['localId']
-            print(f"UID del usuario autenticado: {uid}") 
-
-            data = database.child('Modulo1').get(token=id_token)   
+            data = database.child('Modulo1').get(id_token)   
 
             if data.each():
                 result = {item.key(): item.val() for item in data.each()}
@@ -451,25 +452,17 @@ class Modulo1(APIView):
                 return Response({'error': 'No se encontraron datos en la base de datos'}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
-            print(f'Error al consultar la base de datos: {e}')
             return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
   
         
 class Modulo2(APIView):
     def get(self, request):
-        id_token = request.headers.get('Authorization')
-
-        if id_token and id_token.startswith('Bearer '):
-            id_token = id_token.split('Bearer ')[1]
-        else:
+        id_token = request.COOKIES.get('idToken')
+        if not id_token:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            decoded_token = auth.get_account_info(id_token)  
-            uid = decoded_token['users'][0]['localId']
-            print(f"UID del usuario autenticado: {uid}") 
-
-            data = database.child('Modulo2').get(token=id_token)   
+            data = database.child('Modulo2').get(id_token)   
 
             if data.each():
                 result = [
@@ -481,8 +474,7 @@ class Modulo2(APIView):
                 return Response({'error': 'No se encontraron datos en la base de datos'}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
-            print(f'Error al consultar la base de datos: {e}')
             return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+# >>>   Métodos de Luis xddd    <<<
         
 #hello

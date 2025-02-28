@@ -7,16 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-Img/
-node_modules
-public
-eslint.config.js
-package.json
-package-lock.json
-readme.md
-dist-ssr
-*.local
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -27,3 +17,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#Mis ignores
+node_modules
+dist
+dist-ssr
+*.local

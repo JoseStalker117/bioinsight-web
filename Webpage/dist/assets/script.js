@@ -260,33 +260,51 @@ async function unlinkOAuth(provider) {
 }
 
 
-async function queryRTD(module_name, doc_data) {
-    const response = await fetch(`http://127.0.0.1:8000/rest/rtd/${module_name}/${doc_data}`, {
+async function queryRTD(data) {
+    // Construir la URL con parámetros de consulta
+    const url = new URL(`http://127.0.0.1:8000/rest/rtd`);
+    url.searchParams.append('module_name', data.module_name);
+    url.searchParams.append('doc_data', data.doc_data);
+
+    const response = await fetch(url, {
         method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         credentials: 'include',
     });
-    const data = await response.json();
+
+    const responseData = await response.json();
+    
+    // Mostrar la consulta enviada y la respuesta recibida
+    appendHttpResponse(`Consulta enviada: ${url.toString()}`);
+    
     if (response.ok) {
-        document.getElementById('response').textContent = JSON.stringify(data, null, 2);
-        appendHttpResponse(`Consulta RTD exitosa para módulo: ${module_name}`);
+        document.getElementById('response').textContent = JSON.stringify(responseData, null, 2);
+        appendHttpResponse(`Consulta RTD exitosa para módulo: ${data.module_name}`);
     } else {
-        appendHttpResponse(`Error en consulta RTD: ${data.error}`);
+        appendHttpResponse(`Error en consulta RTD: ${responseData.error}`);
     }
-    return data;
+    return responseData;
 }
 
 
-async function saveRTD(module_name, doc_data, data) {
-    const response = await fetch(`http://127.0.0.1:8000/rest/rtd/${module_name}`, {
+async function saveRTD(data) {
+    const response = await fetch(`http://127.0.0.1:8000/rest/rtd`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ doc_data, data }),
+        body: JSON.stringify(data),
     });
     const responseData = await response.json();
+    
+    // Mostrar la consulta enviada y la respuesta recibida
+    appendHttpResponse(`Consulta enviada: ${JSON.stringify(data, null, 2)}`);
+    
     if (response.ok) {
-        appendHttpResponse(`Datos guardados exitosamente en módulo: ${module_name}`);
+        appendHttpResponse(`Datos guardados exitosamente en módulo: ${data.module_name}`);
+        document.getElementById('response').textContent = JSON.stringify(responseData, null, 2);
     } else {
         appendHttpResponse(`Error al guardar datos en RTD: ${responseData.error}`);
     }
@@ -294,17 +312,22 @@ async function saveRTD(module_name, doc_data, data) {
 }
 
 
-async function updateRTD(module_name, doc_data, data) {
-    const response = await fetch(`http://127.0.0.1:8000/rest/rtd/${module_name}/${doc_data}`, {
+async function updateRTD(data) {
+    const response = await fetch(`http://127.0.0.1:8000/rest/rtd`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ data }),
+        body: JSON.stringify(data),
     });
     const responseData = await response.json();
+    
+    // Mostrar la consulta enviada y la respuesta recibida
+    appendHttpResponse(`Consulta enviada: ${JSON.stringify(data, null, 2)}`);
+    
     if (response.ok) {
-        appendHttpResponse(`Datos actualizados exitosamente en módulo: ${module_name}`);
+        appendHttpResponse(`Datos actualizados exitosamente en módulo: ${data.module_name}`);
+        document.getElementById('response').textContent = JSON.stringify(responseData, null, 2);
     } else {
         appendHttpResponse(`Error al actualizar datos en RTD: ${responseData.error}`);
     }
@@ -312,35 +335,65 @@ async function updateRTD(module_name, doc_data, data) {
 }
 
 
-async function deleteRTD(module_name, doc_data) {
-    const response = await fetch(`http://127.0.0.1:8000/rest/rtd/${module_name}/${doc_data}`, {
+async function deleteRTD(data) {
+    // Construir la URL con parámetros de consulta
+    const url = new URL(`http://127.0.0.1:8000/rest/rtd`);
+    url.searchParams.append('module_name', data.module_name);
+    url.searchParams.append('doc_data', data.doc_data);
+
+    const response = await fetch(url, {
         method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         credentials: 'include',
     });
-    const data = await response.json();
+    const responseData = await response.json();
+    
+    // Mostrar la consulta enviada y la respuesta recibida
+    appendHttpResponse(`Consulta enviada: ${JSON.stringify(data, null, 2)}`);
+    
     if (response.ok) {
-        appendHttpResponse(`Datos eliminados exitosamente del módulo: ${module_name}`);
+        appendHttpResponse(`Datos eliminados exitosamente del módulo: ${data.module_name}`);
+        document.getElementById('response').textContent = JSON.stringify(responseData, null, 2);
     } else {
-        appendHttpResponse(`Error al eliminar datos de RTD: ${data.error}`);
+        appendHttpResponse(`Error al eliminar datos de RTD: ${responseData.error}`);
     }
-    return data;
+    return responseData;
 }
 
 
 async function DatabaseRTD() {
-    const table = document.getElementById('tableSelector').value;
-    const httpMethod = document.getElementById('httpMethodSelector').value;
-    const jsonData = document.getElementById('jsonInput').value;
+    const table = document.getElementById('tableSelector').value; // Nombre de la tabla
+    const docData = document.getElementById('nodeInput').value; // Nodo a editar
+    const httpMethod = document.getElementById('httpMethodSelector').value; // Método HTTP
+    const jsonData = document.getElementById('jsonInput').value; // Datos en formato JSON
+
+    let data = {
+        module_name: table,
+        doc_data: docData
+    };
+
+    // Solo parsear jsonData para POST y PUT
+    if (httpMethod === 'POST' || httpMethod === 'PUT') {
+        try {
+            const parsedData = JSON.parse(jsonData);
+            data.data = parsedData; // Agregar los datos parseados al objeto
+        } catch (error) {
+            appendHttpResponse('Error: Datos JSON no válidos.');
+            return;
+        }
+    }
 
     switch (httpMethod) {
         case 'GET':
-            return await queryRTD(table, jsonData); // Asumiendo que jsonData contiene el doc_data
+            return await queryRTD(data); // Solo se envían module_name y doc_data
         case 'POST':
-            return await saveRTD(table, null, jsonData); // Aquí null se puede reemplazar si necesitas un doc_data específico
+            return await saveRTD(data); // Se envían module_name, doc_data y data
         case 'PUT':
-            return await updateRTD(table, null, jsonData); // Aquí null se puede reemplazar si necesitas un doc_data específico
+            return await updateRTD(data); // Se envían module_name, doc_data y data
         case 'DELETE':
-            return await deleteRTD(table, jsonData); // Asumiendo que jsonData contiene el doc_data
+            return await deleteRTD(data); // Solo se envían module_name y doc_data
         default:
             appendHttpResponse('Método HTTP no válido.');
             return;

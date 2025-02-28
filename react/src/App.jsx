@@ -1,61 +1,65 @@
 import Footer from "./utils/Footer";
 import "./css/Pages.css";
 import "./css/App.css";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/pagination";
 import { Pagination, Autoplay } from "swiper/modules";
-import Prueba1 from './Img/Prueba1.jpeg';
-import Prueba2 from './Img/Prueba2.jpeg';
-import Prueba3 from './Img/Prueba3.jpeg';
+import axios from "axios";
+import { Layout, Menu, Button, Drawer, Modal, Form, Input, message } from "antd";
+
+const imageUrls = [
+  "https://i.ibb.co/b5KLF4vN/Microalga02.webp", 
+  "https://i.ibb.co/NgphXP9Y/Microalga04.webp",
+  "https://i.ibb.co/ccMcwzqD/Microalga03.webp"
+];
+
+const explorar = () => {
+  alert("gfdgrtbr")
+};
 
 function App() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
+  const [message, setMessage] = useState("");
+  const [form] = Form.useForm();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+  const handleSubmit = async (values) => {
+    try {
+      await axios.post('http://localhost:8000/rest/contacto', values, {
+        headers: { "Content-Type": "application/json" },
+      });
+      Swal.fire({
+        icon: "success",
+        title: "¡Mensaje Enviado!",
+        text: "Mensaje enviado. Nos pondremos en contacto pronto.",
+        confirmButtonText: "Aceptar",
+      });
+      form.resetFields();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Form Submitted", formData);
-
-    Swal.fire({
-      icon: "success",
-      title: "¡Mensaje Enviado!",
-      text: "Tu mensaje ha sido enviado con éxito. Nos pondremos en contacto pronto.",
-      confirmButtonText: "Aceptar",
-    });
-
-    // Limpiar los campos del formulario después del envío
-    setFormData({
-      name: "",
-      email: "",
-      message: "",
-    });
-  };
+    } catch (error) {
+      console.error('Error al registrar:', error);
+      setErrorMsg(
+        error.response?.data?.message || "Error al registrar usuario. Intenta de nuevo."
+      );
+    }
+  }
 
   return (
     <>
       <div className="page-content">
         <h1>Bienvenido a Bioinsight</h1>
+        <div>
+          <h1>Prueba de Conexión</h1>
+          <p>{message}</p>
+        </div>
         <p>
           Innovando la ciencia de las microalgas en entornos tecnológicos. Descubre las tecnologías
           para el muestreo, almacenamiento y análisis de datos de tus proyectos.
         </p>
 
         {/* Botón de acción */}
-        <button className="action-button">Explorar más</button>
+        <button className="action-button" onClick={explorar}>Explorar más</button>
 
         {/* Contenedor de tarjetas */}
         {/* <div className="cards-container">
@@ -86,63 +90,37 @@ function App() {
             loop={false} // desactivamos loop ahorita que no tenemos mas img
             className="slider-container"
           >
-            <SwiperSlide>
-              <img src={Prueba1} alt="Prueba 1" />
-            </SwiperSlide>
-            <SwiperSlide>
-              <img src={Prueba2} alt="Prueba 2" />
-            </SwiperSlide>
-            <SwiperSlide>
-              <img src={Prueba3} alt="Prueba 3" />
-            </SwiperSlide>
+            {imageUrls.map((url, index) => (
+              <SwiperSlide key={index}>
+                <img src={url} alt={`Slide ${index + 1}`} />
+              </SwiperSlide>
+            ))}
           </Swiper>
         </div>
 
 
         {/* Formulario de contacto */}
         <div className="form-container">
-          <h3>Contáctanos</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="form-item">
-              <label htmlFor="name">Nombre:</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="form-item">
-              <label htmlFor="email">Email:</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="form-item">
-              <label htmlFor="message">Mensaje:</label>
-              <textarea
-                id="message"
-                name="message"
-                value={formData.message}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <button type="submit" className="submit-btn">Enviar</button>
-          </form>
+          <Form form={form} onFinish={handleSubmit}>
+            <Form.Item label="Nombre" name="nombre" rules={[{ required: true, message: "Por favor, ingresa tu nombre" }]}>
+              <Input placeholder="Escribe tu nombre" />
+            </Form.Item>
+            <Form.Item label="Correo Electrónico" name="email" rules={[{ required: true, message: "Por favor, ingresa tu correo electrónico" }]}>
+              <Input placeholder="Escribe tu correo electrónico" />
+            </Form.Item>
+            <Form.Item label="Mensaje" name="mensaje" rules={[{ required: true, message: "Por favor, ingresa un Mensaje" }]}>
+              <Input placeholder="Escribe tu Mensaje" />
+            </Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              Enviar
+            </Button>
+          </Form>
         </div>
 
       </div>
       <Footer />
     </>
   );
-}
+};
 
 export default App;

@@ -1,0 +1,5 @@
+SimpleAreaChart - este
+SimpleRadialBarChart
+
+
+transformar: id a marca de fecha:

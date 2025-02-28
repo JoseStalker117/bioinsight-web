@@ -5,7 +5,7 @@ from .views import *
 urlpatterns = [
     #Vista de pruebas
     path('test', test, name='Testpage'),
-    
+        
     #REST API
     path('login', Login.as_view(), name='Login'),
     path('querry', Querry.as_view(), name='Querry'),
@@ -25,4 +25,5 @@ urlpatterns = [
     path('modbusdata', ModbusData.as_view(), name='ModbusData'),
     path('modulo1', Modulo1.as_view(), name='Modulo1'),
     path('modulo2', Modulo2.as_view(), name='Modulo2'),
+    #   >>>     URLS de Luis xddd   <<<
 ]

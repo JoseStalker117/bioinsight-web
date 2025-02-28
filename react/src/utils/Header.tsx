@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Layout, Menu, Button, Drawer, Modal, Form, Input } from "antd";
+import { Layout, Menu, Button, Drawer, Modal, Form, Input, message } from "antd";
 import { LoginOutlined, MenuOutlined, FacebookOutlined, InstagramOutlined, MailOutlined, GoogleOutlined } from "@ant-design/icons";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../css/Header.css";
 import Logo from "../assets/Bioinsight.svg";
+import axios from 'axios'
 
 const { Header: AntHeader } = Layout;
 
@@ -14,15 +15,20 @@ const AppHeader: React.FC = () => {
   const [loginModalVisible, setLoginModalVisible] = useState(false);
   const [isLogin, setIsLogin] = useState(true); // Estado para saber si estamos en el formulario de login o registro
   const [form] = Form.useForm(); // Instancia del formulario
-
-  const [errors, setErrors] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   const handleMenuClick = () => setMenuVisible(false);
   const showLoginModal = () => setLoginModalVisible(true);
   const closeLoginModal = () => {
     setLoginModalVisible(false);
-    setErrors("");
-    setIsLogin(true); // Restablecer a la vista de login al cerrar
+    setErrorMsg(""); // Limpiar errores al cambiar de formulario
+    setIsLogin(true);
+  };
+
+  const handleSwitchForm = () => {
+    setIsLogin((prev) => !prev); // Alternar entre login y registro
+    setErrorMsg(""); // Limpiar errores al cambiar de formulario
+    form.resetFields(); // Restablecer campos al cambiar de formulario
   };
 
   const menuKeys: { [key: string]: string } = {
@@ -41,25 +47,40 @@ const AppHeader: React.FC = () => {
     { key: "5", label: "Contáctanos", onClick: () => navigate("/contactanos") },
   ];
 
-  const onFinishLogin = (values) => {
-    console.log("Datos de login:", values);
-    if (values.username !== "admin" || values.password !== "1234") {
-      setErrors("Usuario o contraseña incorrectos");
-    } else {
-      setErrors("");
+  const onFinishLogin = async (values) => {
+    try {
+      const response = await axios.post('http://localhost:8000/rest/login', values, { withCredentials: true });
+      console.log("Respuesta del servidor:", response.data);
+      const token = response.data.idToken;
+      console.log("Token guardado:", token);
+
+      localStorage.setItem("authToken", token); // Guardar token en localStorage
+      message.success("Inicio de sesión exitoso");
       closeLoginModal();
+      navigate("/modbus");
+    } catch (error: any) {
+      console.error('Error al iniciar sesión:', error);
+      setErrorMsg(
+        error.response?.data?.message || "Credenciales incorrectas o correo no encontrado"
+      );
     }
   };
 
-  const onFinishRegister = (values) => {
-    console.log("Datos de registro:", values);
-    form.resetFields(); // Limpiar el formulario después de completar el registro
-    setErrors("");
-  };
-
-  const handleSwitchForm = () => {
-    setIsLogin((prev) => !prev); // Alternar entre login y registro
-    setErrors(""); // Limpiar errores cuando se cambia de formulario
+  const onFinishRegister = async (values: { nombre, apellidos, username, password }) => {
+    try {
+      await axios.post('http://localhost:8000/rest/register', values, {
+        headers: { "Content-Type": "application/json" },
+      });
+      message.success("Registro exitoso. Ahora puedes iniciar sesión.");
+      form.resetFields();
+      setErrorMsg(""); 
+      setIsLogin(true);
+    } catch (error: any) {
+      console.error('Error al registrar:', error);
+      setErrorMsg(
+        error.response?.data?.message || "Error al registrar usuario. Intenta de nuevo."
+      );
+    }
   };
 
   return (
@@ -105,12 +126,11 @@ const AppHeader: React.FC = () => {
         onCancel={closeLoginModal}
         footer={null}
         height={600}
-        width={500} // Ajustar tamaño del modal
+        width={500}
       >
-        {/* Header de errores */}
-        {errors && (
-          <div style={{ backgroundColor: "#ff4d4f", color: "white", padding: "10px", textAlign: "center", borderRadius: "5px", marginBottom: "15px" }}>
-            {errors}
+        {errorMsg && (
+          <div style={{ backgroundColor: "#ff4d4f", color: "white", padding: "10px", textAlign: "center", borderRadius: "5px", marginBottom: "15px", fontWeight: "bold" }}>
+            {errorMsg}
           </div>
         )}
 
@@ -123,8 +143,8 @@ const AppHeader: React.FC = () => {
             </div>
 
             {/* Campos de usuario y contraseña */}
-            <Form.Item label="Usuario" name="username" rules={[{ required: true, message: "Por favor, ingresa tu usuario" }]}>
-              <Input placeholder="Escribe tu usuario" />
+            <Form.Item label="Correo Electrónico" name="email" rules={[{ required: true, message: "Por favor, ingresa tu correo electrónico" }]}>
+              <Input placeholder="Escribe tu correo electrónico" />
             </Form.Item>
             <Form.Item label="Contraseña" name="password" rules={[{ required: true, message: "Por favor, ingresa tu contraseña" }]}>
               <Input.Password placeholder="Escribe tu contraseña" />
@@ -136,23 +156,24 @@ const AppHeader: React.FC = () => {
             </Button>
           </Form>
         ) : (
-          <Form layout="vertical" onFinish={onFinishRegister} form={form}>
+          // <Form layout="vertical" form={form} onFinish={onFinishRegister} >
+          <Form form={form} onFinish={isLogin ? onFinishLogin : onFinishRegister} layout="vertical">
             {/* Logo */}
             <div style={{ textAlign: "center", marginBottom: "15px" }}>
               <img src={Logo} alt="Logo" style={{ width: "80px", borderRadius: "50%", border: "2px solid black" }} />
             </div>
 
             {/* Campos adicionales para registro */}
-            <Form.Item label="Nombre Completo" name="RegistroNombre" rules={[{ required: true, message: "Por favor, ingresa tu nombre completo" }]}>
-              <Input placeholder="Escribe tu nombre completo" />
+            <Form.Item label="Nombre" name="nombre" rules={[{ required: true, message: "Por favor, ingresa tu nombre" }]}>
+              <Input placeholder="Escribe tu nombre" />
             </Form.Item>
-            <Form.Item label="Correo Electrónico" name="Registroemail" rules={[{ required: true, type: "email", message: "Por favor, ingresa un correo electrónico válido" }]}>
-              <Input placeholder="Escribe tu correo electrónico" />
+            <Form.Item label="Apellidos" name="apellidos" rules={[{ required: true, message: "Por favor, ingresa tu Apellidos" }]}>
+              <Input placeholder="Escribe tu Apellidos" />
             </Form.Item>
-            <Form.Item label="Usuario" name="RegistroUsername" rules={[{ required: true, message: "Por favor, ingresa un nombre de usuario" }]}>
+            <Form.Item label="Usuario" name="username" rules={[{ required: true, message: "Por favor, ingresa un nombre de usuario" }]}>
               <Input placeholder="Escribe tu usuario" />
             </Form.Item>
-            <Form.Item label="Contraseña" name="RegistroPassword" rules={[{ required: true, message: "Por favor, ingresa tu contraseña" }]}>
+            <Form.Item label="Contraseña" name="password" rules={[{ required: true, message: "Por favor, ingresa tu contraseña" }, ...(isLogin ? [] : [{ min: 6, message: 'La contraseña debe tener al menos 6 caracteres' }])]}>
               <Input.Password placeholder="Escribe tu contraseña" />
             </Form.Item>
 

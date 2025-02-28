@@ -1,9 +1,9 @@
 import React from "react";
 import "../css/Pages.css";
 import "../css/Productos.css";
-import Atlas from '../Img/Atlas01_2_11zon.webp';
-import ModBus from '../Img/Modbus04_19_11zon.webp';
-import Turbidez from '../Img/Turbidez07.webp';
+// import Atlas from '../Img/Atlas01_2_11zon.webp';
+// import ModBus from '../Img/Modbus04_19_11zon.webp';
+// import Turbidez from '../Img/Turbidez07.webp';
 import { Typography } from "antd";
 import { useInView } from "react-intersection-observer";
 
@@ -41,7 +41,7 @@ function Productos() {
             El fin de estos módulos es medir valores del reactor en el estado líquido.
           </Paragraph>
         </div>
-        <img src={Atlas} alt="" className="section-image" />
+        {/* <img src={Atlas} alt="" className="section-image" /> */}
       </section>
 
       <section
@@ -58,7 +58,7 @@ function Productos() {
             sensores, almacenando así sus datos de manera local y en la nube.
           </Paragraph>
         </div>
-        <img src={ModBus} alt="" className="section-image" />
+        {/* <img src={ModBus} alt="" className="section-image" /> */}
       </section>
 
       <section
@@ -77,7 +77,7 @@ function Productos() {
             conectividad para su funcionamiento.
           </Paragraph>
         </div>
-        <img src={Turbidez} alt="" className="section-image" />
+        {/* <img src={Turbidez} alt="" className="section-image" /> */}
       </section>
     </div>
   );

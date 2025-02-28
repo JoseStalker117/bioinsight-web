@@ -3,9 +3,6 @@ import "../css/Pages.css";
 import "../css/Servicios.css";
 import { Typography } from "antd";
 import { useInView } from "react-intersection-observer";
-import ModBus1 from '../Img/Modbus01_16_11zon.webp';
-import ModBus2 from '../Img/Modbus02_17_11zon.webp';
-import ModBus3 from '../Img/Modbus03_18_11zon.webp';
 
 const { Title, Paragraph } = Typography;
 
@@ -35,7 +32,7 @@ function Servicios() {
             para los diferentes productos proporcionados para el laboratorio, desde la instalación
             y calibración de equipos, uso diario y acceso a la información para análisis de datos.          </Paragraph>
         </div>
-        <img src={ModBus1} alt="" className="section-image" />
+        {/* <img src={ModBus1} alt="" className="section-image" /> */}
       </section>
 
       <section
@@ -51,7 +48,7 @@ function Servicios() {
             automatizar un proceso? Nosotros te resolvemos.
           </Paragraph>
         </div>
-        <img src={ModBus2} alt="" className="section-image" />
+        {/* <img src={ModBus2} alt="" className="section-image" /> */}
       </section>
 
       <section
@@ -68,7 +65,7 @@ function Servicios() {
             usuario rastreable para monitorear movimientos indebidos en tu aplicación.
             </Paragraph>
         </div>
-        <img src={ModBus3} alt="" className="section-image" />
+        {/* <img src={ModBus3} alt="" className="section-image" /> */}
       </section>
     </div>
   );
