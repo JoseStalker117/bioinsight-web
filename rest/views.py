@@ -95,7 +95,7 @@ class Register(APIView):
             id_token = user['idToken']  # Ahora puedes obtener el idToken
 
             # Establece la cookie con el idToken
-            response = Response({'message': 'Usuario registrado exitosamente', 'userId': user_id}, status=status.HTTP_201_CREATED)
+            response = Response({'message': 'Usuario registrado exitosamente'}, status=status.HTTP_201_CREATED)
             response.set_cookie(
                 key='idToken',
                 value=id_token,
@@ -275,7 +275,7 @@ class ResetPassword(APIView):
 
 
 class ResendEmail(APIView):
-    def post(self, request):
+    def get(self, request):
         id_token = request.COOKIES.get('idToken')
 
         if not id_token:
@@ -290,7 +290,7 @@ class ResendEmail(APIView):
         
 
 class Logout(APIView):
-    def post(self, request):
+    def get(self, request):
         response = Response({'message': 'Sesión cerrada exitosamente'}, status=status.HTTP_200_OK)
         response.delete_cookie('idToken')
         response.delete_cookie('userData')
@@ -298,7 +298,7 @@ class Logout(APIView):
 
 
 class DeleteAccount(APIView):
-    def post(self, request):
+    def get(self, request):
         id_token = request.COOKIES.get('idToken')
 
         if not id_token:
@@ -673,8 +673,8 @@ class Modulo2(APIView):
 
         except Exception as e:
             return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-# >>>   Métodos de Luis xddd    <<<
         
+
 # >>>   Métodos de ADMIN    <<<
 def is_admin(uid):
     try:
@@ -835,10 +835,7 @@ class Admin_Restore(APIView):
             if not user_id:
                 return Response({'error': 'uid es requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Genera una nueva contraseña aleatoria
             password = os.urandom(8).hex()
-
-            # Restablece la contraseña del usuario
             firebase_admin.auth.update_user(user_id, password=password)
 
             return Response({'message': 'Contraseña restablecida exitosamente', 'new_password': password}, status=status.HTTP_200_OK)
