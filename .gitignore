@@ -2,6 +2,7 @@
 /Webpage/__pycache__
 /rest/__pycache__
 /Webpage/migrations
+/Webpage/dist/.vite
 db.sqlite3
 /venv
 

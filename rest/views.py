@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from rest_framework import status
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
+from firebase_admin import auth as admin_auth
 import json, datetime, os, pytz, pyrebase
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 
 # Se inicializa Pyrebase y sus variables
@@ -49,8 +51,9 @@ class Login(APIView):
                 key='idToken',
                 value=id_token,
                 httponly=False,
-                secure=False, #HTTPS
-                samesite='Lax'
+                secure=False,
+                samesite='Lax',
+                max_age=3600
             )
             return response
         except Exception as e:
@@ -97,8 +100,9 @@ class Register(APIView):
                 key='idToken',
                 value=id_token,
                 httponly=False,
-                secure=False,  # Cambiar a True en producción
-                samesite='Lax'
+                secure=False,
+                samesite='Lax',
+                max_age=3600
             )
             return response
         except Exception as e:
@@ -213,13 +217,43 @@ class GetProfile(APIView):
             response = Response({'message': 'Información del usuario obtenida exitosamente', 'user': user_data}, status=status.HTTP_200_OK)
             response.set_cookie(
                 key='userData',
-                value=json.dumps(user_data),  # Convierte el diccionario a una cadena JSON
+                value=json.dumps(user_data),
                 httponly=False,
-                secure=False,  # Cambiar a True en producción
-                samesite='Lax'
+                secure=False,
+                samesite='Lax',
+                max_age=3600
             )
 
             return response
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ChangePassword(APIView):
+    def post(self, request):
+        id_token = request.COOKIES.get('idToken')
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not current_password or not new_password:
+            return Response({'error': 'Las contraseñas son requeridas para el movimiento.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user_info = auth.get_account_info(id_token)
+            email = user_info['users'][0]['email']
+            
+            try:
+                auth.sign_in_with_email_and_password(email, current_password)
+            except Exception as e:
+                return Response({'error': 'La contraseña actual es incorrecta'}, status=status.HTTP_401_UNAUTHORIZED)
+
+            user_id = user_info['users'][0]['localId']
+            admin_auth.update_user(user_id, password=new_password)
+            
+            return Response({'message': 'Contraseña actualizada exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -290,31 +324,36 @@ class DeleteAccount(APIView):
 class LinkOAuth(APIView):
     def post(self, request):
         id_token = request.COOKIES.get('idToken')
-        oauth_token = request.data.get('oauth_token')  # Token de OAuth de la aplicación de terceros
-        provider = request.data.get('provider')  # Nombre del proveedor (ej. 'google', 'facebook')
-        phone_number = request.data.get('phone_number')  # Número de teléfono a vincular
+        oauth_token = request.data.get('oauth_token')
+        provider = request.data.get('provider')
+        phone_number = request.data.get('phone_number')
 
         if not id_token or not provider:
             return Response({'error': 'Token de autorización y proveedor son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verifica el token y obtiene el uid del usuario
             decoded_token = firebase_admin.auth.verify_id_token(id_token)
             user_id = decoded_token['uid']
-
-            # Vincula la cuenta de OAuth y el número de teléfono al usuario
-            if provider == 'google':
-                # Lógica para vincular cuenta de Google
-                pass  # Implementa la lógica específica para Google
-            elif provider == 'facebook':
-                # Lógica para vincular cuenta de Facebook
-                pass  # Implementa la lógica específica para Facebook
             
-            # Vincula el número de teléfono
-            if phone_number:
-                auth.update_user(user_id, phone_number=phone_number)
+            if provider == 'phone_number':
+                admin_auth.update_user(user_id, phone_number=phone_number)
 
-            return Response({'message': f'Cuenta de {provider} y número de teléfono vinculados exitosamente'}, status=status.HTTP_200_OK)
+            elif provider == 'google':
+                admin_auth.update_user(
+                    user_id,
+                    provider_to_link=auth.GoogleAuthProvider.credential(oauth_token)
+                )
+            elif provider == 'github':
+                admin_auth.update_user(
+                    user_id,
+                    provider_to_link=auth.GithubAuthProvider.credential(oauth_token)
+                )
+            elif provider == 'microsoft':
+                admin_auth.update_user(
+                    user_id,
+                    provider_to_link=auth.OAuthProvider('microsoft.com').credential(oauth_token)
+                )
+            return Response({'message': f'Cuenta de {provider} y/o número de teléfono vinculados exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
@@ -328,22 +367,31 @@ class UnlinkOAuth(APIView):
             return Response({'error': 'Token de autorización y proveedor son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verifica el token y obtiene el uid del usuario
             decoded_token = firebase_admin.auth.verify_id_token(id_token)
             user_id = decoded_token['uid']
 
-            # Desvincula la cuenta de OAuth del usuario
+            if provider == 'phone_number':
+                admin_auth.update_user(user_id, phone_number=None)
             if provider == 'google':
-                # Lógica para desvincular cuenta de Google
-                pass  # Implementa la lógica específica para Google
-            elif provider == 'facebook':
-                # Lógica para desvincular cuenta de Facebook
-                pass  # Implementa la lógica específica para Facebook
-            
-            # Desvincula el número de teléfono (opcionalmente puedes establecerlo como None)
-            auth.update_user(user_id, phone_number=None)
+                # Desvincular cuenta de Google
+                admin_auth.update_user(
+                    user_id,
+                    provider_to_unlink=['google.com']
+                )
+            elif provider == 'github':
+                # Desvincular cuenta de Github
+                admin_auth.update_user(
+                    user_id,
+                    provider_to_unlink=['github.com']
+                )
+            elif provider == 'microsoft':
+                # Desvincular cuenta de Microsoft
+                admin_auth.update_user(
+                    user_id,
+                    provider_to_unlink=['microsoft.com']
+                )
 
-            return Response({'message': f'Cuenta de {provider} desvinculada y número de teléfono eliminado exitosamente'}, status=status.HTTP_200_OK)
+            return Response({'message': f'Cuenta de {provider} desvinculada eliminado exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
@@ -376,6 +424,12 @@ class DatabaseRTD(APIView):
         if not module_name or not doc_data or not data:
             return Response({'error': 'module_name, doc_data y data son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
+        decoded_token = firebase_admin.auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+
+        if not is_admin(uid):
+            return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+        
         try:
             database.child(module_name).child(doc_data).set(data, token=id_token)
             return Response({'message': 'Datos guardados exitosamente'}, status=status.HTTP_201_CREATED)
@@ -392,6 +446,12 @@ class DatabaseRTD(APIView):
         if not module_name or not doc_data or not data:
             return Response({'error': 'module_name, doc_data y data son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
+        decoded_token = firebase_admin.auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+
+        if not is_admin(uid):
+            return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+        
         try:
             database.child(module_name).child(doc_data).update(data, token=id_token)
             return Response({'message': 'Datos actualizados exitosamente'}, status=status.HTTP_200_OK)
@@ -407,13 +467,151 @@ class DatabaseRTD(APIView):
         if not doc_data:
             return Response({'error': 'doc_data es requerido para modificar el nodo.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        decoded_token = firebase_admin.auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+
+        if not is_admin(uid):
+            return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+        
         try:
             database.child(module_name).child(doc_data).remove(id_token)
             return Response({'message': 'Datos eliminados exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+class RefreshToken(APIView):
+    def get(self, request):
+        idToken = request.COOKIES.get('idToken')
         
+        if not idToken:
+            return Response({'error': 'Es necesario tener un idToken para efectuar este movimiento.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            user = auth.refresh(idToken)
+            newtoken = user['idToken']
+            
+            response = Response({
+                'idToken': newtoken,
+                'message': 'Token refrescado exitosamente'
+            }, status=status.HTTP_200_OK)
+            
+            response.set_cookie(
+                key='idToken',
+                value=newtoken,
+                httponly=False,
+                secure=False,
+                samesite='Lax',
+                max_age=3600
+            )
+            
+            return response
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class OAuthLogin(APIView):
+    def post(self, request):
+        provider = request.data.get('provider')
+        access_token = request.data.get('access_token')
+
+        if not provider or not access_token:
+            return Response({'error': 'Proveedor y token de acceso son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if provider == 'google':
+                user = auth.sign_in_with_oauth_credential(
+                    credential=access_token,
+                    provider=provider
+                )
+            elif provider == 'github':
+                user = auth.sign_in_with_oauth_credential(
+                    credential=access_token,
+                    provider=provider
+                )
+            elif provider == 'microsoft':
+                user = auth.sign_in_with_oauth_credential(
+                    credential=access_token,
+                    provider=provider
+                )
+            else:
+                return Response({'error': 'Proveedor no soportado'}, status=status.HTTP_400_BAD_REQUEST)
+
+            id_token = user['idToken']
+            
+            response = Response({'message': f'Login exitoso con {provider}',}, status=status.HTTP_200_OK)
+            
+            response.set_cookie(
+                key='idToken',
+                value=id_token,
+                httponly=False,
+                secure=False,
+                samesite='Lax',
+                max_age=3600
+            )
+            
+            return response
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class OAuthRegister(APIView):
+    def post(self, request):
+        provider = request.data.get('provider')
+        access_token = request.data.get('access_token')
+        email = request.data.get('email')
+        nombre = request.data.get('nombre')
+        apellidos = request.data.get('apellidos')
+
+        if not provider or not access_token or not email or not nombre or not apellidos:
+            return Response({'error': 'Proveedor, token de acceso, email, nombre y apellidos son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if provider == 'google':
+                user = auth.create_user_with_oauth_credential(
+                    credential=access_token,
+                    provider=provider,
+                    email=email,
+                    display_name=f"{nombre} {apellidos}"
+                )
+            elif provider == 'github':
+                user = auth.create_user_with_oauth_credential(
+                    credential=access_token,
+                    provider=provider,
+                    email=email,
+                    display_name=f"{nombre} {apellidos}"
+                )
+            elif provider == 'microsoft':
+                user = auth.create_user_with_oauth_credential(
+                    credential=access_token,
+                    provider=provider,
+                    email=email,
+                    display_name=f"{nombre} {apellidos}"
+                )
+            else:
+                return Response({'error': 'Proveedor no soportado'}, status=status.HTTP_400_BAD_REQUEST)
+
+            id_token = user['idToken']
+            
+            response = Response({'message': f'Registro exitoso con {provider}'}, status=status.HTTP_200_OK)
+            
+            response.set_cookie(
+                key='idToken',
+                value=id_token,
+                httponly=False,
+                secure=False,
+                samesite='Lax',
+                max_age=3600
+            )
+            
+            return response
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+
+
 # >>>   Métodos de Luis xddd    <<<
 class ModbusData(APIView):
     def get(self, request):
@@ -477,4 +675,195 @@ class Modulo2(APIView):
             return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 # >>>   Métodos de Luis xddd    <<<
         
-#hello
+# >>>   Métodos de ADMIN    <<<
+def is_admin(uid):
+    try:
+        user_doc = firestore.collection('usuarios').document(uid).get()
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            return user_data.get('admin', False)
+        return False
+    except Exception as e:
+        return False
+
+    
+class CheckAdmin(APIView):
+    def post(self, request):
+        uid = request.data.get('uid')
+
+        if not uid:
+            return Response({'error': 'UID es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            admin_status = is_admin(uid)
+            return Response({'is_admin': admin_status}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class Admin_AddUser(APIView):
+    def post(self, request):
+        id_token = request.COOKIES.get('idToken')
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            uid = decoded_token['uid']
+
+            if not is_admin(uid):
+                return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+
+            username = request.data.get('username')
+            nombre = request.data.get('nombre')
+            apellidos = request.data.get('apellidos')
+            admin_role = request.data.get('admin', False)
+            password = os.urandom(8).hex()
+
+            if not username or not nombre or not apellidos:
+                return Response({'error': 'Todos los campos son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+            email = f"{username}@bioinsight.com"
+            user = auth.create_user_with_email_and_password(email, password)
+            user_id = user['localId']
+
+            user_data = {
+                'nombre': nombre,
+                'apellidos': apellidos,
+                'username': username,
+                'creationdate': datetime.now(pytz.timezone('America/Mexico_City')),
+                'admin': admin_role,
+                'foto': 0                
+            }
+
+            firestore.collection('usuarios').document(user_id).set(user_data)
+
+            return Response({'message': 'Usuario creado exitosamente', 'password': password}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class Admin_Buzon(APIView):
+    def get(self, request):
+        id_token = request.COOKIES.get('idToken')
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            uid = decoded_token['uid']
+
+            if not is_admin(uid):
+                return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+
+            contactos = firestore.collection('contacto').get()
+            contactos_data = {contacto.id: contacto.to_dict() for contacto in contactos}
+
+            return Response(contactos_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class Admin_Usuarios(APIView):
+    def get(self, request):
+        id_token = request.COOKIES.get('idToken')
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            uid = decoded_token['uid']
+
+            if not is_admin(uid):
+                return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+
+            usuarios = firestore.collection('usuarios').get()
+            usuarios_data = [
+                {
+                    'id': usuario.id,
+                    'username': usuario.to_dict().get('username'),
+                    'email': f"{usuario.to_dict().get('username')}@bioinsight.com",
+                    'admin': usuario.to_dict().get('admin')
+                }
+                for usuario in usuarios
+            ]
+
+            return Response(usuarios_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def put(self, request):
+        id_token = request.COOKIES.get('idToken')
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            uid = decoded_token['uid']
+
+            if not is_admin(uid):
+                return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+
+            user_id = request.data.get('user_id')
+            admin_role = request.data.get('admin')
+
+            if user_id is None or admin_role is None:
+                return Response({'error': 'user_id y admin son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user_ref = firestore.collection('usuarios').document(user_id)
+            user_ref.update({'admin': admin_role})
+
+            return Response({'message': 'Perfil actualizado exitosamente'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class Admin_Restore(APIView):
+    def post(self, request):
+        id_token = request.COOKIES.get('idToken')
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            uid = decoded_token['uid']
+
+            if not is_admin(uid):
+                return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+
+            user_id = request.data.get('uid')
+            if not user_id:
+                return Response({'error': 'uid es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Genera una nueva contraseña aleatoria
+            password = os.urandom(8).hex()
+
+            # Restablece la contraseña del usuario
+            firebase_admin.auth.update_user(user_id, password=password)
+
+            return Response({'message': 'Contraseña restablecida exitosamente', 'new_password': password}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def delete(self, request):
+        id_token = request.COOKIES.get('idToken')
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            uid = decoded_token['uid']
+
+            if not is_admin(uid):
+                return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+
+            user_id = request.query_params.get('uid')
+            if not user_id:
+                return Response({'error': 'uid es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+            firebase_admin.auth.delete_user(user_id)
+            firestore.collection('usuarios').document(user_id).delete()
+
+            return Response({'message': 'Cuenta eliminada exitosamente'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
