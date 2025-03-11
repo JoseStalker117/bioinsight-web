@@ -1,0 +1,28 @@
+body {
+    margin: 80px 0px 0px;
+    padding: 0px 50px;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:root {
+    /* color de encabezado */
+    --color-header: #f2f2f2;
+
+    /* color de texto */
+    --color-text-primario: black;
+    --color-text-secundario: #f2f2f2;
+    
+    /* color footer */
+    --color-footer: #2a2f46;
+
+    /* color de enlaces del footer */
+    --color-enlace-footer: #00bcd4;   
+}
+
+.contenedor-principal{
+    text-align: center;
+}
+
+
+/* color: #555; */
+/* color: #333; */

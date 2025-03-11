@@ -252,8 +252,20 @@ class ChangePassword(APIView):
 
             user_id = user_info['users'][0]['localId']
             admin_auth.update_user(user_id, password=new_password)
+            user = auth.sign_in_with_email_and_password(email, new_password)
+            id_token = user['idToken']
             
-            return Response({'message': 'Contraseña actualizada exitosamente'}, status=status.HTTP_200_OK)
+            response = response({'message': 'Contraseña actualizada exitosamente'}, status=status.HTTP_200_OK)
+            response.set_cookie(
+                key='idToken',
+                value=id_token,
+                httponly=False,
+                secure=False,
+                samesite='Lax',
+                max_age=3600
+            )
+            
+            return response
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -760,6 +772,28 @@ class Admin_Buzon(APIView):
             contactos_data = {contacto.id: contacto.to_dict() for contacto in contactos}
 
             return Response(contactos_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def delete(self, request):
+        id_token = request.COOKIES.get('idToken')
+        contacto_id = request.query_params.get('contacto_id')
+
+        if not id_token:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not contacto_id:
+            return Response({'error': 'contacto_id es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            uid = decoded_token['uid']
+
+            if not is_admin(uid):
+                return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
+            
+            firestore.collection('contacto').document(contacto_id).delete()
+
+            return Response({'message': 'Contacto eliminado exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

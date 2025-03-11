@@ -1,0 +1,123 @@
+@import url("./Root.css");
+
+.slider-container {
+    width: 90%;
+    margin: auto;
+    position: relative;
+    padding: 20px;
+}
+
+.slider-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--color-text-primario);
+    border: none;
+    border-radius: 50%;
+    color: var(--color-text-secundario);
+    padding: 10px;
+    cursor: pointer;
+    z-index: 10;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.slider-btn:hover {
+    background-color: var(--color-text-secundario);
+    transform: translateY(-50%) scale(1.2);
+    color: var(--color-text-primario);
+}
+
+.slider-btn.left {
+    left: 10px;
+}
+
+.slider-btn.right {
+    right: 10px;
+}
+
+.slides-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    transition: transform 0.5s ease;
+    position: relative;
+}
+
+.slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 500px;
+    height: 500px;
+    margin: 0 150px;
+    border-radius: 25px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    opacity: 0.6;
+}
+
+.slide.active {
+    transform: scale(1.2);
+    opacity: 1;
+    z-index: 1;
+}
+
+.slide.left {
+    transform: scale(0.9);
+    opacity: 0.6;
+    position: absolute;
+    left: -200px;
+}
+
+.slide.right {
+    transform: scale(0.9);
+    opacity: 0.6;
+    position: absolute;
+    right: -200px;
+}
+
+.slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 15px;
+}
+
+
+@media (max-width: 768px) {
+    .slider-container {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .slider-btn {
+        padding: 8px;
+    }
+
+    .slider-btn.left {
+        left: 5px;
+    }
+
+    .slider-btn.right {
+        right: 5px;
+    }
+
+    .slides-wrapper {
+        flex-direction: column;
+    }
+
+    .slide {
+        width: 90%;
+        height: 300px;
+        margin: 10px 0;
+    }
+
+    .slide.active {
+        transform: scale(1);
+    }
+
+    .slide img {
+        border-radius: 10px;
+    }
+}

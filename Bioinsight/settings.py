@@ -1,5 +1,10 @@
 from pathlib import Path
 
+# Globales para editar rápido un host
+IP = '127.0.0.1'
+PORT = '8000'
+ADRESS= IP + ':' + PORT
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -15,6 +20,7 @@ DEBUG = True
 
 # Añade tu IP local
 ALLOWED_HOSTS = [
+    IP,
     'localhost',
     '127.0.0.1',
     '192.168.0.2',
@@ -148,4 +154,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #CSRF_COOKIE_SECURE = True
 #SECURE_SSL_REDIRECT = False
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']  # Permitir localhost
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000', # Permitir localhost
+    'http://' + ADRESS,    
+    ]  

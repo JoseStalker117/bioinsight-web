@@ -1,0 +1,13 @@
+@import url("./Root.css");
+
+.action-button {
+    background-color: var(--color-text-primario);
+    color: var(--color-text-secundario);
+    font-size: 18px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+    cursor: pointer;
+  }

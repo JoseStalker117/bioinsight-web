@@ -432,7 +432,7 @@ h2 {
 }
 
 /* Estilo para los selects */
-#queryForm select {
+#queryForm select, #addUserForm select, #manageUserForm select {
     width: 90%; /* Ancho del 90% para que se expanda al tamaño del formulario */
     padding: 10px; /* Padding interno */
     margin-bottom: 15px; /* Margen inferior */
@@ -450,4 +450,72 @@ h2 {
     border-radius: 4px; /* Bordes redondeados */
     font-size: large; /* Tamaño de fuente grande */
     resize: vertical; /* Permitir redimensionar solo verticalmente */
+}
+
+#contactForm textarea {
+    width: 90%; /* Ancho del 90% para que se expanda al tamaño del formulario */
+    padding: 10px; /* Padding interno */
+    margin-bottom: 15px; /* Margen inferior */
+    border: 1px solid #ccc; /* Borde gris claro */
+    border-radius: 4px; /* Bordes redondeados */
+    font-size: large; /* Tamaño de fuente grande */
+    resize: vertical; /* Permitir redimensionar solo verticalmente */
+}
+
+.oauth-container {
+    width: 90%;
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+}
+
+.oauth-table {
+    width: 80%;
+    border-collapse: separate;
+    border-spacing: 10px;
+}
+
+.oauth-cell {
+    text-align: center;
+    padding: 5px;
+    border-radius: 8px;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.oauth-cell:hover {
+    background-color: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+.oauth-icon {
+    width: 20px;
+    height: 20px;
+    margin-bottom: 5px;
+    display: block;
+    margin: 0 auto;
+}
+
+.oauth-cell span {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+#oauthInputContainer {
+    margin-top: 15px;
+    text-align: center;
+}
+
+#oauthInputContainer input {
+    margin: 5px;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+#oauthInputContainer button {
+    margin-top: 10px;
 }
