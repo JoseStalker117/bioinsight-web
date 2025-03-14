@@ -6,6 +6,7 @@
 db.sqlite3
 /venv
 
+/rest/datos.py
 nuevo5.json
 nuevo1.txt
 

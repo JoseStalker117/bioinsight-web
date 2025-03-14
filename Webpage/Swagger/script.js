@@ -153,7 +153,7 @@ async function updateProfile() {
 }
 
 
-async function resetPassword(email) {
+async function resetPassword2(email) {
     const response = await fetch('http://127.0.0.1:8000/rest/reset-password', {
         method: 'POST',
         headers: {

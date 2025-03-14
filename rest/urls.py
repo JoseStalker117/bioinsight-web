@@ -17,8 +17,11 @@ urlpatterns = [
     path('resend-email', ResendEmail.as_view(), name='Resend-Email'),
     path('logout', Logout.as_view(), name='Logout'),
     path('delete-account', DeleteAccount.as_view(), name='Delete-Account'),
+    
+    path('get-linked-services', GetLinkedServices.as_view(), name='Get-Linked-Services'),
     path('link-oauth', LinkOAuth.as_view(), name='Link-OAuth'),
     path('unlink-oauth', UnlinkOAuth.as_view(), name='Unlink-OAuth'),
+    
     path('rtd', DatabaseRTD.as_view(), name='RTD-Crud'),
     path('change-password', ChangePassword.as_view(), name='Change-Password'),
     path('refresh-token', RefreshToken.as_view(), name='Refresh-Token'),

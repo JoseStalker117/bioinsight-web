@@ -7,10 +7,11 @@ from rest_framework import status
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from firebase_admin import auth as admin_auth
+from firebase_admin.auth import ExpiredIdTokenError, InvalidIdTokenError
 import json, datetime, os, pytz, pyrebase
 from datetime import datetime, timedelta
 from django.utils import timezone
-
+import requests
 
 # Se inicializa Pyrebase y sus variables
 with open(os.path.join(os.path.dirname(__file__), 'Pyrebase.json')) as config_file:
@@ -56,16 +57,21 @@ class Login(APIView):
                 max_age=3600
             )
             return response
+        except requests.exceptions.RequestException as e:
+            if 'INVALID_LOGIN_CREDENTIALS' in str(e):
+                return Response({'error': 'Usuario o contraseña incorrectos'}, status=status.HTTP_401_UNAUTHORIZED)
+            error_message = str(e)
+            return Response({'error': 'Error en la solicitud de autenticación', 'details': error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
-
+            error_message = str(e)
+            return Response({'error': 'Error inesperado', 'details': error_message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class Register(APIView):
     def post(self, request):
-        nombre = request.data.get('nombre')
-        apellidos = request.data.get('apellidos')
-        username = request.data.get('username')
-        password = request.data.get('password')
+        nombre = request.data.get('nombreReg')
+        apellidos = request.data.get('apellidosReg')
+        username = request.data.get('usernameReg')
+        password = request.data.get('passwordReg')
 
         if not nombre or not apellidos or not username or not password:
             return Response({'error': 'Todos los campos son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
@@ -76,7 +82,7 @@ class Register(APIView):
             user = auth.create_user_with_email_and_password(email, password)
 
             # Envía un correo de verificación
-            #auth.send_email_verification(user['idToken'])
+            auth.send_email_verification(user['idToken'])
 
             user_id = user['localId']
             
@@ -148,9 +154,10 @@ class Form(APIView):
         
 class UpdateProfile(APIView):
     def put(self, request):
-        id_token = request.COOKIES.get('idToken')
-
-        if not id_token:
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -160,7 +167,7 @@ class UpdateProfile(APIView):
             # Obtiene los nuevos datos del perfil
             nombre = request.data.get('nombre')
             apellidos = request.data.get('apellidos')
-            foto = request.data.get('foto')  # Nueva clave para la foto
+            foto = request.data.get('foto')
 
             # Convierte la clave foto a un tipo de dato numérico, si es posible
             if foto is not None:
@@ -192,8 +199,12 @@ class UpdateProfile(APIView):
 
 class GetProfile(APIView):
     def get(self, request):
-        id_token = request.COOKIES.get('idToken')
-
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Extraer el token después de 'Bearer '
+        id_token = auth_header.split(' ')[1]  
         if not id_token:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -231,7 +242,14 @@ class GetProfile(APIView):
 
 class ChangePassword(APIView):
     def post(self, request):
-        id_token = request.COOKIES.get('idToken')
+        # id_token = request.COOKIES.get('idToken')
+        id_token = request.headers.get('Authorization')
+
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
         current_password = request.data.get('current_password')
         new_password = request.data.get('new_password')
 
@@ -255,7 +273,8 @@ class ChangePassword(APIView):
             user = auth.sign_in_with_email_and_password(email, new_password)
             id_token = user['idToken']
             
-            response = response({'message': 'Contraseña actualizada exitosamente'}, status=status.HTTP_200_OK)
+            # Correct way to create the response object
+            response = Response({'message': 'Contraseña actualizada exitosamente'}, status=status.HTTP_200_OK)
             response.set_cookie(
                 key='idToken',
                 value=id_token,
@@ -288,9 +307,12 @@ class ResetPassword(APIView):
 
 class ResendEmail(APIView):
     def get(self, request):
-        id_token = request.COOKIES.get('idToken')
+        # id_token = request.COOKIES.get('idToken')
+        id_token = request.headers.get('Authorization')
 
-        if not id_token:
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -311,9 +333,15 @@ class Logout(APIView):
 
 class DeleteAccount(APIView):
     def get(self, request):
-        id_token = request.COOKIES.get('idToken')
+        # id_token = request.COOKIES.get('idToken')
 
-        if not id_token:
+        # if not id_token:
+        #     return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        id_token = request.headers.get('Authorization')
+
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -331,11 +359,55 @@ class DeleteAccount(APIView):
             return response
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-           
+          
+          
+class GetLinkedServices(APIView):
+    def get(self, request):
+        # Obtener el token de autorización
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            # Verificar el token de Firebase
+            decoded_token = firebase_admin.auth.verify_id_token(id_token)
+            user_id = decoded_token['uid']
+
+            # Obtener los servicios vinculados al usuario
+            user = admin_auth.get_user(user_id)
+
+            linked_services = {}
+
+            # Verificar si está vinculado a servicios
+            if user.phone_number:
+                linked_services['phone_number'] = user.phone_number
+
+            if 'google.com' in user.provider_data:
+                linked_services['google'] = True
+
+            if 'github.com' in user.provider_data:
+                linked_services['github'] = True
+
+            if 'microsoft.com' in user.provider_data:
+                linked_services['microsoft'] = True
+
+            return Response({'message': 'Servicios vinculados obtenidos', 'data': linked_services}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+         
+# api para telefono
 class LinkOAuth(APIView):
     def post(self, request):
-        id_token = request.COOKIES.get('idToken')
+        # id_token = request.COOKIES.get('idToken')
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
         oauth_token = request.data.get('oauth_token')
         provider = request.data.get('provider')
         phone_number = request.data.get('phone_number')
@@ -368,12 +440,18 @@ class LinkOAuth(APIView):
             return Response({'message': f'Cuenta de {provider} y/o número de teléfono vinculados exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-
+ 
+# api de telefono
 class UnlinkOAuth(APIView):
     def post(self, request):
-        id_token = request.COOKIES.get('idToken')
-        provider = request.data.get('provider')  # Nombre del proveedor (ej. 'google', 'facebook')
+        # id_token = request.COOKIES.get('idToken')
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        provider = request.data.get('provider') 
 
         if not id_token or not provider:
             return Response({'error': 'Token de autorización y proveedor son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
@@ -407,13 +485,12 @@ class UnlinkOAuth(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
 class DatabaseRTD(APIView):
     @csrf_exempt
     def get(self, request):
         id_token = request.COOKIES.get('idToken')
-        module_name = request.query_params.get('module_name')  # Obtener desde la URL
-        doc_data = request.query_params.get('doc_data')  # Obtener desde la URL
+        module_name = request.query_params.get('module_name')  
+        doc_data = request.query_params.get('doc_data')  
         
         if not doc_data:
             return Response({'error': 'doc_data es requerido para consultar el nodo child'}, status=status.HTTP_400_BAD_REQUEST)
@@ -428,7 +505,12 @@ class DatabaseRTD(APIView):
 
     @csrf_exempt
     def post(self, request):
-        id_token = request.COOKIES.get('idToken')
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
         module_name = request.data.get('module_name')
         doc_data = request.data.get('doc_data')
         data = request.data.get('data')
@@ -442,18 +524,30 @@ class DatabaseRTD(APIView):
         if not is_admin(uid):
             return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
         
+        timestamp_id = str(int(datetime.utcnow().timestamp()))  
+
         try:
-            database.child(module_name).child(doc_data).set(data, token=id_token)
-            return Response({'message': 'Datos guardados exitosamente'}, status=status.HTTP_201_CREATED)
+            database.child(module_name).child(timestamp_id).set(data, token=id_token)
+            return Response({'message': 'Datos guardados exitosamente', 'id': timestamp_id}, status=status.HTTP_201_CREATED)
         except Exception as e:
+            print(f"Error en POST: {e}") 
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @csrf_exempt
     def put(self, request):
-        id_token = request.COOKIES.get('idToken')
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
         module_name = request.data.get('module_name')
         doc_data = request.data.get('doc_data')
         data = request.data.get('data')
+        
+        print(f"module name: {module_name}")
+        print(f"doc data: {doc_data}")
+        print(f"data: {data}")
 
         if not module_name or not doc_data or not data:
             return Response({'error': 'module_name, doc_data y data son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
@@ -463,18 +557,23 @@ class DatabaseRTD(APIView):
 
         if not is_admin(uid):
             return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
-        
         try:
-            database.child(module_name).child(doc_data).update(data, token=id_token)
+            database.child(module_name).child(doc_data).set(data, token=id_token)
             return Response({'message': 'Datos actualizados exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @csrf_exempt
     def delete(self, request):
-        id_token = request.COOKIES.get('idToken')
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
         module_name = request.query_params.get('module_name')  # Obtener desde la URL
-        doc_data = request.query_params.get('doc_data')  # Obtener desde la URL
+        # doc_data = request.query_params.get('doc_data')  # Obtener desde la URL
+        doc_data = request.query_params.getlist('doc_data[]')  # Obtener una lista de IDs desde la URL
 
         if not doc_data:
             return Response({'error': 'doc_data es requerido para modificar el nodo.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -486,12 +585,14 @@ class DatabaseRTD(APIView):
             return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
         
         try:
-            database.child(module_name).child(doc_data).remove(id_token)
+            # database.child(module_name).child(doc_data).remove(id_token)
+            for doc_id in doc_data:  # Iterar sobre la lista de IDs
+                database.child(module_name).child(doc_id).remove(id_token)
             return Response({'message': 'Datos eliminados exitosamente'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
+# NO SIRVE
 class RefreshToken(APIView):
     def get(self, request):
         idToken = request.COOKIES.get('idToken')
@@ -521,7 +622,6 @@ class RefreshToken(APIView):
             
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 class OAuthLogin(APIView):
     def post(self, request):
@@ -567,7 +667,6 @@ class OAuthLogin(APIView):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
-
 
 class OAuthRegister(APIView):
     def post(self, request):
@@ -623,52 +722,64 @@ class OAuthRegister(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
 
-
 # >>>   Métodos de Luis xddd    <<<
 class ModbusData(APIView):
     def get(self, request):
-        # Cambiar para obtener el id_token de la cookie
-        id_token = request.COOKIES.get('idToken')
-        if not id_token:
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            decoded_token = auth.get_account_info(id_token)  
-            uid = decoded_token['users'][0]['localId']
+            # decoded_token = auth.get_account_info(id_token)  
+            # uid = decoded_token['users'][0]['localId']
             data = database.child('Modbus').get(token=id_token)   
             if data.each():
-                result = {item.key(): item.val() for item in data.each()} 
+                # result = {item.key(): item.val() for item in data.each()} 
+                result = [
+                    {**item.val(), "id": item.key(), "timestamp": int(item.key())}
+                    for item in data.each()
+                ]
                 return Response(result, status=status.HTTP_200_OK)
             else:
                 return Response({'error': 'No se encontraron datos en la base de datos'}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
             return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        
+              
 class Modulo1(APIView):
     def get(self, request):
-        id_token = request.COOKIES.get('idToken')
-        if not id_token:
+        id_token = request.headers.get('Authorization')
+
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             data = database.child('Modulo1').get(id_token)   
 
             if data.each():
-                result = {item.key(): item.val() for item in data.each()}
+                # result = {item.key(): item.val() for item in data.each()}
+                result = [
+                    {**item.val(), "id": item.key(), "timestamp": int(item.key())}
+                    for item in data.each()
+                ]
                 return Response(result, status=status.HTTP_200_OK)
             else:
                 return Response({'error': 'No se encontraron datos en la base de datos'}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
-            return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-  
+            return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  
         
 class Modulo2(APIView):
     def get(self, request):
-        id_token = request.COOKIES.get('idToken')
-        if not id_token:
+        id_token = request.headers.get('Authorization')
+
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -686,7 +797,6 @@ class Modulo2(APIView):
         except Exception as e:
             return Response({'error': 'Error al consultar la base de datos'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
 # >>>   Métodos de ADMIN    <<<
 def is_admin(uid):
     try:
@@ -697,8 +807,7 @@ def is_admin(uid):
         return False
     except Exception as e:
         return False
-
-    
+   
 class CheckAdmin(APIView):
     def post(self, request):
         uid = request.data.get('uid')
@@ -712,11 +821,12 @@ class CheckAdmin(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-
 class Admin_AddUser(APIView):
     def post(self, request):
-        id_token = request.COOKIES.get('idToken')
-        if not id_token:
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -754,11 +864,12 @@ class Admin_AddUser(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class Admin_Buzon(APIView):
     def get(self, request):
-        id_token = request.COOKIES.get('idToken')
-        if not id_token:
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -775,9 +886,16 @@ class Admin_Buzon(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     def delete(self, request):
-        id_token = request.COOKIES.get('idToken')
-        contacto_id = request.query_params.get('contacto_id')
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
+            return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
+        contacto_id = request.query_params.get('contacto_id')
+        if not contacto_id:
+            return Response({'error': 'contacto_id es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        
         if not id_token:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -797,11 +915,13 @@ class Admin_Buzon(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class Admin_Usuarios(APIView):
     def get(self, request):
-        id_token = request.COOKIES.get('idToken')
-        if not id_token:
+        id_token = request.headers.get('Authorization')
+
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -811,7 +931,11 @@ class Admin_Usuarios(APIView):
             if not is_admin(uid):
                 return Response({'error': 'No tienes permisos de administrador'}, status=status.HTTP_403_FORBIDDEN)
 
+            # Obtener los usuarios desde Firestore
             usuarios = firestore.collection('usuarios').get()
+            if not usuarios:
+                return Response({'error': 'No hay usuarios en la colección'}, status=status.HTTP_404_NOT_FOUND)
+            
             usuarios_data = [
                 {
                     'id': usuario.id,
@@ -821,14 +945,32 @@ class Admin_Usuarios(APIView):
                 }
                 for usuario in usuarios
             ]
-
             return Response(usuarios_data, status=status.HTTP_200_OK)
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        except ExpiredIdTokenError as e:
+            print("Token expirado:", str(e))
+            return Response({'error': 'El token ha expirado. Por favor inicie sesión nuevamente.'}, status=status.HTTP_401_UNAUTHORIZED)
+        except InvalidIdTokenError as e:
+            print("Token inválido:", str(e))
+            return Response({'error': 'El token proporcionado no es válido.'}, status=status.HTTP_401_UNAUTHORIZED)
+        except firestore.exceptions.NotFound as e:
+            print("Firestore no encontrado:", str(e))
+            return Response({'error': 'No se pudo acceder a la base de datos de Firestore.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except firestore.exceptions.PermissionDenied as e:
+            print("Permiso denegado a Firestore:", str(e))
+            return Response({'error': 'Permiso denegado al acceder a Firestore.'}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            return Response({'error': 'Ocurrió un error inesperado.', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
     def put(self, request):
-        id_token = request.COOKIES.get('idToken')
-        if not id_token:
+        # id_token = request.COOKIES.get('idToken')
+        # if not id_token:
+        #     return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        id_token = request.headers.get('Authorization')
+
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -851,11 +993,15 @@ class Admin_Usuarios(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 class Admin_Restore(APIView):
     def post(self, request):
-        id_token = request.COOKIES.get('idToken')
-        if not id_token:
+        # id_token = request.COOKIES.get('idToken')
+        # if not id_token:
+        #     return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -877,8 +1023,10 @@ class Admin_Restore(APIView):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def delete(self, request):
-        id_token = request.COOKIES.get('idToken')
-        if not id_token:
+        id_token = request.headers.get('Authorization')
+        if id_token and id_token.startswith('Bearer '):
+            id_token = id_token.split('Bearer ')[1]
+        else:
             return Response({'error': 'Token de autorización requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
