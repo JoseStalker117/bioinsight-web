@@ -22,11 +22,15 @@
     min-width: 180px;
 }
 
+.contenedor-logo:hover {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
 .logo {
     width: 40px;
     height: 40px;
     margin-right: 10px;
-    font-size: 0px;
     font-weight: bold;
 }
 
@@ -67,7 +71,7 @@
 }
 
 .login-btn:hover {
-    background: var(--color-text-primario)  !important;
+    background: var(--color-text-primario) !important;
     color: var(--color-header);
 }
 
@@ -79,6 +83,32 @@
 .btnIR {
     margin: 25px 0px;
     padding: 10px;
+}
+
+.usuario-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+}
+/* .contenedorUsuario1 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+} */
+
+.contenedorUsuario {
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    background-color: #e6f7ff;
+    /* Fondo suave azul */
+    border-radius: 8px;
 }
 
 @media (max-width: 1024px) {
@@ -110,9 +140,15 @@
         display: none;
     }
 
+    .contenedorUsuario1 {
+        display: none;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
     .menu-actions {
         flex-grow: 1;
-        justify-content: flex-end; 
+        justify-content: flex-end;
     }
 
     .menu-btn {

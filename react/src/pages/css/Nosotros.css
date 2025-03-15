@@ -1,0 +1,123 @@
+.page-content {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .page-title {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 2.5rem;
+    color: #333;
+  }
+  
+  .section {
+    margin-bottom: 60px;
+    opacity: 0;
+    transition: opacity 0.6s ease-out;
+  }
+  
+  .section.appear {
+    opacity: 1;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 20px;
+  }
+  
+  .text-content {
+    font-size: 1.1rem;
+    color: #555;
+    line-height: 1.8;
+  }
+  
+  .content-text {
+    margin-bottom: 20px;
+  }
+  
+  .section-image {
+    width: 40%;
+    height: auto;
+    margin-top: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    float: right; 
+    margin-left: 20px;
+  }
+  
+  .text-row {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .text-row .content-text {
+    width: 48%;
+  }
+  
+  .contenedor-historia {
+    background-color: #f9f9f9;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .section.mision,
+  .section.vision {
+    background-color: #ecf3f6;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  
+  .appear {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+  
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 2rem;
+    }
+  
+    .section-title {
+      font-size: 1.5rem;
+    }
+  
+    .text-content {
+      font-size: 1rem;
+    }
+  
+    .section-image {
+      width: 100%;
+      float: none;
+      margin: 0;
+    }
+  
+    .text-row {
+      flex-direction: column; 
+    }
+  
+    .text-row .content-text {
+      width: 100%;
+      margin-bottom: 15px;
+    }
+  }
+  
+  .imagenhistoria{
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    justify-items: center;
+    display: flex;
+  }

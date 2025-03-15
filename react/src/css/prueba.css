@@ -1,0 +1,121 @@
+@import url("./Root.css");
+
+.barra-lateral {
+    position: fixed !important;
+    margin: -18px -50px;
+    height: 92vh;
+    width: 200px;
+    background-color: var(--color-header);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+}
+
+.contenedor-principal-dashboard {
+    margin: 20px;
+    padding: 24px;
+    position: relative !important;
+    /* margin-left: calc(108% - 100%);
+    margin: -18px; 
+    padding: 0px 50px;
+    width: calc(100% - 8%);
+    height: calc(100vh - 120px); 
+    overflow-y: auto;  */
+}
+
+.barra-lateral {
+    position: relative;
+    background-color: var(--color-header);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.barra-lateral .ant-layout-sider-trigger {
+    position: relative;
+    background-color: var(--color-header);
+    color: var(--color-text-primario) !important;
+    box-shadow: 1px 1px 6px 1px rgba(0, 0, 0, 0.1);
+}
+
+.barra-lateral .ant-menu {
+    background: transparent;
+}
+
+.barra-lateral .ant-menu-item {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.CerrarSesion {
+    background-color: var(--color-text-primario);
+    color: var(--color-text-secundario) !important;
+    font-weight: bold;
+}
+
+.CerrarSesion:hover,
+.CerrarSesion:focus,
+.CerrarSesion:active {
+    background-color: #871816 !important;
+    color: var(--color-text-secundario) !important;
+}
+
+.contenedor-layout {
+    background-color: transparent;
+}
+
+.contenedor-layout>.layout-dashboard {
+    margin: 10px;
+    background-color: transparent !important;
+}
+
+.contenedor-principal-dashboard {
+    margin-left: 160px;
+    margin-top: -25px;
+    transition: margin-left 0.3ms ease-in-out;
+}
+
+.contenedor-principal-dashboard.collapsed {
+    margin-left: 20px;
+}
+
+
+.layout-footer {
+    margin-left: 140px;
+    transition: margin-left 0.3ms ease-in-out;
+    text-align: center;
+    font-size: 14px;
+    color: #6C757D;
+    background: transparent;
+}
+
+.layout-footer.collapsed {
+    margin-left: 0px;
+}
+
+@media screen and (max-width: 768px) {
+    .barra-lateral {
+        width: 0;
+        overflow: hidden;
+    }
+
+    .barra-lateral.collapsed {
+        width: 100px;
+    }
+
+    .contenedor-principal-dashboard {
+        margin-left: 0px;
+        width: 100%;
+        padding: 0px;
+        margin-top: -50px;
+    }
+
+    .contenedor-principal-dashboard.collapsed {
+        margin-left: 20px;
+        margin-top: -50px;
+        padding: 0px;
+
+    }
+
+    .layout-footer {
+        margin-left: 0;
+        width: 100%;
+    }
+}

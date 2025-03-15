@@ -1,0 +1,80 @@
+@import url("./Root.css");
+
+.nav {
+    overflow: hidden;
+    margin-top: -15px;
+    position: fixed;
+    z-index: 1000;
+    width: 250px;
+    left: 0;
+    height: 100vh;
+    width: auto;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Sombra para el contenedor */
+    background-color: var(--color-header);
+    transition: all 0.3s ease; /* Animación suave para el menú */
+}
+
+.sider {
+    background-color: var(--color-header);
+    height: 100vh;
+    border-right: 2px solid var(--color-border); /* Borde sutil */
+}
+
+.menu-btn {
+    display: none;
+    color: var(--color-text-primario);
+}
+
+/* Estilos para los items del menú */
+.ant-menu-item {
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.ant-menu-item:hover {
+    background-color: var(--color-hover);
+    color: var(--color-text-hover);
+}
+
+
+@media (max-width: 1024px) {
+    .menu-btn {
+        display: block;
+    }
+}
+
+@media (max-width: 1025px) {
+    .contenedor-logo {
+        min-width: 140px;
+    }
+
+    .login-btn {
+        font-size: 24px;
+        padding: 5px 10px;
+        display: none;
+    }
+
+    .contenedorUsuario1 {
+        display: none;
+    }
+
+    .menu-actions {
+        flex-grow: 1;
+        justify-content: flex-end;
+    }
+
+    .menu-btn {
+        display: block;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+

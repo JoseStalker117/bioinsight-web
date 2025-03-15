@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, useNavigate, useLocation, Route } from
 // componets
 import HeaderComponent from "../Components/Header";
 import Footer from "../Components/Footer";
+import HeaderDash from "../Components/HeaderDash";
 
 // paginas principales
 import Home from "../App";
@@ -15,10 +16,23 @@ import Contacto from "../pages/Contacto";
 // pagina no encontrada
 import NotFound from "../pages/NotFound";
 
-// nueva vista
-import App2 from "../App2";
-import Modulo1 from "../App/Modulo1"
-import Modulo2 from "../App/Modulo2";
+// paginas dashboard
+import Dashboard from "../App2";
+import Atlas1 from "../App/Atlas1";
+import Atlas2 from "../App/Atlas2";
+
+// paginas dashboard Editar
+import Atlas1Edit from "../App/Atlas1Edit";
+import Atlas2Edit from "../App/Atlas2Edit";
+import ModbusEdit from "../App/ModbusEdit";
+
+// paginas dashboard administrador
+import NewUser from "../App/NewUser";
+import ManageUser from "../App/ManageUser";
+import Buzon from "../App/Buzon";
+
+// editar perfil
+import EditProfile from "../App/EditProfile";
 
 const AppRoutes = () => {
     return (
@@ -27,37 +41,49 @@ const AppRoutes = () => {
             <HeaderLocation />
             <Routes>
                 {/* paginas de la primer vista */}
-                <Route path="/" element={ <Home/> } />
-                <Route path="/productos" element={ <Productos /> } />
-                <Route path="/servicios" element={ <Servicios /> } />
-                <Route path="/nosotros" element={ <Nosotros /> } />
-                <Route path="/contacto" element={ <Contacto /> } />
+                <Route path="/" element={<Home />} />
+                <Route path="/productos" element={<Productos />} />
+                <Route path="/servicios" element={<Servicios />} />
+                <Route path="/nosotros" element={<Nosotros />} />
+                <Route path="/contacto" element={<Contacto />} />
 
                 {/* Pagina no encontrada */}
                 <Route path="*" element={<NotFound />} />
-                
+
                 {/* paginas de la segunda vista */}
-                <Route path="/modbus" element={ <App2 /> } />
-                <Route path="/modulo1" element={ <Modulo1 /> } />
-                <Route path="/modulo2" element={ <Modulo2 /> } />
+                <Route path="/atlas1" element={<Atlas1 />} />
+                <Route path="/atlas2" element={<Atlas2 />} />
+                <Route path="/modbus" element={<Dashboard />} />
+
+                <Route path="/atlas1Edit" element={<Atlas1Edit />} />
+                <Route path="/atlas2Edit" element={<Atlas2Edit />} />
+                <Route path="/modbusEdit" element={<ModbusEdit />} />
+
+                <Route path="/newUser" element={<NewUser />} />
+                <Route path="/manageUser" element={<ManageUser />} />
+                <Route path="/buzon" element={<Buzon />} />
+
+                <Route path="/editarProfile" element={<EditProfile />} />
             </Routes>
 
-            <Footer />
+            <FooterLocation />
         </Router>
     );
 };
 
-// FUNCION PARA CONTROLAR LA VISIBILIDAD EL "Header" EN CIERTAS RUTAS.
 const HeaderLocation = () => {
-    // Obtenemos la ubicacion actual
-    const location = useLocation(); 
-    // Array con las rutas de paginas en las que no aparecera el "Header"
-    const paths = ["/dashboard", "/modbus", "/modulo1", "/modulo2"]
-    // Verificamos que la ruta actual no este dentro del array, si, si esta
-    //devolvemos un null, para que no se renderize el header, si no, devolvemos el componente "Header"
-    return paths.includes(location.pathname) ? null : <HeaderComponent />;
+    const location = useLocation();
+    const paths = ["/dashboard", "/atlas1", "/atlas2", "/modbus", "/atlas1Edit", "/atlas2Edit", "/modbusEdit", "/newUser", "/manageUser", "/buzon", "/editarProfile"]
+    if (paths.includes(location.pathname)) {
+        return <HeaderDash />;
+    }
+    return <HeaderComponent />;
 }
 
-
+const FooterLocation = () => {
+    const location = useLocation();
+    const paths = ["/dashboard", "/atlas1", "/atlas2", "/modbus", "/atlas1Edit", "/atlas2Edit", "/modbusEdit", "/newUser", "/manageUser", "/buzon", "/editarProfile"]
+    return paths.includes(location.pathname) ? null : <Footer />;
+}
 
 export default AppRoutes;

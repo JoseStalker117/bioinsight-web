@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import "../css/Slider.css";
-import Inyector01 from '../images/Inyector01.jpg'
+import Modbus2 from '../images/Modbus02.jpg'
 import Inyector02 from '../images/Inyector02.jpg'
 import Inyector03 from '../images/Inyector03.jpg'
+import Microalga from '../images/Microalga06.jpg'
+import Microalga2 from '../images/Microalga02.jpg'
 
 const SliderComponent = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [intervalId, setIntervalId] = useState(null); 
-    const slides = [Inyector01, Inyector02, Inyector03];
+    const slides = [Modbus2, Inyector02, Inyector03];
 
   const resetInterval = () => {
     if (intervalId) {

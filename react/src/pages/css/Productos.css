@@ -1,0 +1,135 @@
+.page-content {
+    padding: 50px;
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.page-title {
+    text-align: center;
+    font-size: 2.8rem;
+    color: #333;
+    margin-bottom: 40px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.section {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    padding: 40px;
+    margin-bottom: 40px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    width: 80%;
+    max-width: 1100px;
+    text-align: center;
+}
+
+.section.appear {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+.section-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    text-shadow: 3px 3px 10px rgba(0, 0, 0, 0.4);
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.section-title:hover {
+    text-shadow: 3px 3px 15px rgba(0, 0, 0, 0.6);
+    transform: scale(1.1);
+}
+
+.text-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    margin-top: 20px;
+}
+
+.text-content .content-text {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    margin-bottom: 20px;
+    letter-spacing: 0.5px;
+    font-weight: 400;
+    max-width: 900px;
+}
+
+.text-content img {
+    max-width: 80%;
+    height: auto;
+    border-radius: 10px;
+    margin-top: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease-in-out;
+}
+
+.text-content img:hover {
+    transform: scale(1.05);
+}
+
+@media (min-width: 1200px) {
+    .text-content {
+        flex-direction: row;
+        justify-content: space-between;
+        text-align: left;
+    }
+
+    .text-content .content-text {
+        font-size: 1.3rem;
+        width: 55%;
+    }
+
+    .text-content img {
+        width: 40%;
+    }
+}
+
+@media (max-width: 768px) {
+    .text-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .section-title {
+        font-size: 2rem;
+    }
+
+    .text-content .content-text {
+        font-size: 1.1rem;
+    }
+
+    .text-content img {
+        width: 80%;
+    }
+}
+
+@media (max-width: 480px) {
+    .section-title {
+        font-size: 1.8rem;
+    }
+
+    .text-content .content-text {
+        font-size: 1rem;
+    }
+
+    .text-content img {
+        width: 100%;
+    }
+}

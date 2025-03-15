@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Layout, Menu, Button, Drawer, Modal, Form, Input, message, Tooltip } from "antd";
-import {
-    LoginOutlined, MenuOutlined, GoogleOutlined, GithubOutlined, WindowsOutlined
-} from "@ant-design/icons";
+import { LoginOutlined, MenuOutlined, GoogleOutlined, GithubOutlined, WindowsOutlined } from "@ant-design/icons";
 import Logo from "../assets/Bioinsight.svg";
 import '../css/Header.css'
 import Swal from "sweetalert2";
-
 const { Header } = Layout;
 
 const HeaderComponent = () => {
@@ -17,9 +14,9 @@ const HeaderComponent = () => {
     const [menuVisible, setMenuVisible] = useState(false);
     const [loginModalVisible, setLoginModalVisible] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
-    const [form] = Form.useForm(); 
+    const [form] = Form.useForm();
     const [errorMsg, setErrorMsg] = useState("");
-    const [user, setUser] = useState(null); 
+    const [user, setUser] = useState(null);
 
     // Ponemos "clave" para cada ruta de la pagina
     const menuKeys = {
@@ -39,33 +36,52 @@ const HeaderComponent = () => {
         { key: "5", label: "Contactanos", onClick: () => navigate("/contacto") },
     ];
 
-    // 
     const handleMenuClick = () => setMenuVisible(false);
     const showLoginModal = () => {
-        setMenuVisible(false);  // Cerrar el menú
-        setLoginModalVisible(true);  // Abrir el modal de login
+        setMenuVisible(false);  
+        setLoginModalVisible(true); 
     };
+
     const closeLoginModal = () => {
         setLoginModalVisible(false);
-        setErrorMsg(""); 
+        setErrorMsg("");
         setIsLogin(true);
     };
 
     // cambio entre el login y registro
     const handleSwitchForm = () => {
-        setIsLogin((prev) => !prev);
-        setErrorMsg(""); 
-        form.resetFields(); 
+        setIsLogin((prev) => !prev);        
+        form.resetFields();
+        setErrorMsg("");
     };
 
     async function login(values) {
         try {
             const { username, password } = values;
             if (!username || !password) {
-                message.error('usuario y contraseña son requeridos');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Usuario y contraseña son requeridos',
+                    confirmButtonText: 'Aceptar',
+                });
                 return;
             }
-            const email = username + '@bioinsight.com';
+
+            let email = username;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(username)) {
+                email = username + "@bioinsight.com";
+            }
+            if (!emailRegex.test(email)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Usuario no válido',
+                    text: 'El usuario no es válido',
+                    confirmButtonText: 'Aceptar',
+                });
+                return;
+            }
 
             const response = await fetch('http://127.0.0.1:8000/rest/login', {
                 method: 'POST',
@@ -82,31 +98,33 @@ const HeaderComponent = () => {
                 Swal.fire({
                     icon: "success",
                     title: "¡Inicio de Sesion correcto!",
-                    text: `Inicio de Sesion correcto ${username}`,
+                    text: `Bienvenido ${username}`,
                     confirmButtonText: "Aceptar",
                 });
                 closeLoginModal();
                 getProfile();
                 navigate('/modbus');
             } else {
-                message.error(`Error en el login: ${data.error}`);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: `${data.error}`,
+                    confirmButtonText: 'Aceptar',
+                });
             }
         } catch (error) {
-            message.error("Error en la conexión al servidor");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "Error en la conexión al servidor",
+                confirmButtonText: 'Aceptar',
+            });
         }
     };
 
     async function getProfile() {
-        const token = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('idToken='))
-            ?.split('=')[1];  
-
-            console.log("token para enviar a la peticion getProfile: ",token )
-        if (!token) {
-            console.error("No se encontró el token de sesión");
-            return;
-        }
+        const token = document.cookie.split('; ').find(row => row.startsWith('idToken='))?.split('=')[1];
+        if (!token) { return; }
 
         try {
             const response = await fetch('http://127.0.0.1:8000/rest/get-profile', {
@@ -119,15 +137,13 @@ const HeaderComponent = () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Error en getProfile:", errorData.error);
+                await response.json();
                 return;
             }
 
             const data = await response.json();
-            console.log('Perfil obtenido:', data);
             document.cookie = `userData=${JSON.stringify(data.user)}; path=/`;
-            setUser(data.user); 
+            setUser(data.user);
         } catch (error) {
             console.error("Error en la solicitud getProfile:", error);
         }
@@ -137,28 +153,60 @@ const HeaderComponent = () => {
         getProfile();
     }, []);
 
-    async function registerUser(nombre, apellidos, username, password) {
-        // const response = await fetch('http://127.0.0.1:8000/rest/register', {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify({ nombre, apellidos, username, password }),
-        // });
-        // const data = await response.json();
-        // if (response.ok) {
-        //     appendHttpResponse(`Registro exitoso: Usuario ${username} registrado`);
-        //     setTimeout(() => {
-        //         getProfile();
-        //     }, 1500);
-        //     document.getElementById('updateNombre').value = '';
-        //     document.getElementById('updateApellidos').value = '';
-        //     document.getElementById('updateFoto').value = '';
-        // } else {
-        //     appendHttpResponse(`Error en el registro: ${data.error}`);
-        // }
-        // return data;
-    }
+    async function registerUser(values) {
+        try {
+            const { nombreReg, apellidosReg, usernameReg, passwordReg } = values;
+            const response = await fetch('http://127.0.0.1:8000/rest/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({
+                    nombreReg,
+                    apellidosReg,
+                    usernameReg,
+                    passwordReg
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registro Exitoso',
+                    text: 'Usuario registrado correctamente',
+                    confirmButtonText: 'Aceptar',
+                });
+                setIsLogin(true);
+                form.resetFields();
+            } else {
+                if (data.error && data.error.includes('EMAIL_EXISTS')) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'El Usuario ya está registrado. Intenta con otro.',
+                        confirmButtonText: 'Aceptar',
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Ocurrió un error al registrar al usuario.',
+                        confirmButtonText: 'Aceptar',
+                    });
+                }
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "Error en la conexión al servidor",
+                confirmButtonText: 'Aceptar',
+            });
+        }
+    };
 
     const showComingSoonMessage = () => {
         message.info("Próximamente disponible");
@@ -179,15 +227,15 @@ const HeaderComponent = () => {
             <div className="menu-actions">
                 {user ? (
                     <div>
-                        <Button type="primary" onClick={() => navigate('/modbus')}>
+                        <Button type="primary" onClick={() => navigate('/modbus')} >
                             Ir a la Consola
                         </Button>
-                        <span style={{ marginLeft: '10px' }}>
+                        <span style={{ marginLeft: '10px' }} className="contenedorUsuario1" >
                             Bienvenido {user.nombre}
                         </span>
                     </div>
                 ) : (
-                    <Button type="primary" icon={<LoginOutlined />} onClick={showLoginModal}>
+                    <Button type="primary" icon={<LoginOutlined />} onClick={showLoginModal} className="login-btn">
                         Iniciar Sesión
                     </Button>
                 )}
@@ -202,6 +250,11 @@ const HeaderComponent = () => {
                 open={menuVisible}
                 styles={{ body: { padding: 20 } }}
             >
+                {user && (
+                    <div className="contenedorUsuario">
+                        <span>Bienvenido {user.nombre}</span>
+                    </div>
+                )}
                 <Menu mode="vertical" onClick={handleMenuClick} selectedKeys={[menuKeys[location.pathname] || "1"]} items={menuItems} />
                 <div style={{ padding: "10px" }}>
                     {user ? (
@@ -226,6 +279,7 @@ const HeaderComponent = () => {
                 // style={{ top: "-12%" }} // Asegura que el modal esté siempre centrado, sin afectar la página
                 height={500}
                 width={500}
+                // destroyOnClose
             >
                 {errorMsg && (
                     <div style={{ backgroundColor: "#ff4d4f", color: "white", padding: "10px", textAlign: "center", borderRadius: "5px", marginBottom: "15px", fontWeight: "bold" }}>
@@ -258,34 +312,31 @@ const HeaderComponent = () => {
                     </Form>
                 ) : (
                     <Form form={form} onFinish={isLogin ? login : registerUser} layout="vertical">
-                        {/* Logo */}
                         <div style={{ textAlign: "center", marginBottom: "15px" }}>
                             <img src={Logo} alt="Logo" style={{ width: "80px", borderRadius: "50%", border: "2px solid black" }} />
                         </div>
 
-                        {/* Campos adicionales para registro */}
-                        <Form.Item label="Nombre" name="nombre" rules={[{ required: true, message: "Por favor, ingresa tu nombre" }]}>
+                        <Form.Item label="Nombre" name="nombreReg" rules={[{ required: true, message: "Por favor, ingresa tu nombre" }]}>
                             <Input placeholder="Escribe tu nombre" />
                         </Form.Item>
-                        <Form.Item label="Apellidos" name="apellidos" rules={[{ required: true, message: "Por favor, ingresa tu Apellidos" }]}>
+                        <Form.Item label="Apellidos" name="apellidosReg" rules={[{ required: true, message: "Por favor, ingresa tu Apellidos" }]}>
                             <Input placeholder="Escribe tu Apellidos" />
                         </Form.Item>
-                        <Form.Item label="Usuario" name="username" rules={[{ required: true, message: "Por favor, ingresa un nombre de usuario" }]}>
+                        <Form.Item label="Usuario" name="usernameReg" rules={[{ required: true, message: "Por favor, ingresa un nombre de usuario" }]}>
                             <Input placeholder="Escribe tu usuario" />
                         </Form.Item>
-                        <Form.Item label="Contraseña" name="password" rules={[{ required: true, message: "Por favor, ingresa tu contraseña" }, ...(isLogin ? [] : [{ min: 6, message: 'La contraseña debe tener al menos 6 caracteres' }])]}>
+                        <Form.Item label="Contraseña" name="passwordReg" rules={[{ required: true, message: "Por favor, ingresa tu contraseña" }, ...(isLogin ? [] : [{ min: 6, message: 'La contraseña debe tener al menos 6 caracteres' }])]}>
                             <Input.Password placeholder="Escribe tu contraseña" />
                         </Form.Item>
-                        {/* Campo para confirmar la contraseña */}
                         <Form.Item
                             label="Confirmar Contraseña"
                             name="confirm"
-                            dependencies={['password']}
+                            dependencies={['passwordReg']}
                             rules={[
                                 { required: true, message: "Por favor, confirma tu contraseña" },
                                 ({ getFieldValue }) => ({
                                     validator(_, value) {
-                                        if (!value || getFieldValue('password') === value) {
+                                        if (!value || getFieldValue('passwordReg') === value) {
                                             return Promise.resolve();
                                         }
                                         return Promise.reject(new Error('Las contraseñas no coinciden'));
@@ -296,7 +347,6 @@ const HeaderComponent = () => {
                             <Input.Password placeholder="Confirma tu contraseña" />
                         </Form.Item>
 
-                        {/* Botón de registro */}
                         <div className="btnIR">
                             <Button type="primary" htmlType="submit" block>
                                 Registrarse
