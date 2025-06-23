@@ -1,0 +1,86 @@
+{
+  "index.html": {
+    "file": "assets/index-DcjQh5DV.js",
+    "name": "index",
+    "src": "index.html",
+    "isEntry": true,
+    "css": [
+      "assets/index-BOsSSjBi.css"
+    ],
+    "assets": [
+      "assets/Bioinsight-LV12sOqu.svg",
+      "assets/Modbus02-NooVOCL8.jpg",
+      "assets/Inyector02-BFtZ--22.jpg",
+      "assets/Inyector03-99zKfqbM.jpg",
+      "assets/Atlas03-DE07fHfb.jpg",
+      "assets/Modbus03-GSH3Hhtl.jpg",
+      "assets/Turbidez01-BEIEgiYC.jpg",
+      "assets/Sensores01-B676Dcvt.jpg",
+      "assets/Electrodos-DYYqP2GR.jpg",
+      "assets/Modbus04-DCkQs_V9.jpg",
+      "assets/Remediacion02-DeyG0iCP.jpg",
+      "assets/UANL-FA01-BQdSa7qt.jpg",
+      "assets/Reactor01-z9oCh_tu.jpg"
+    ]
+  },
+  "src/assets/Bioinsight.svg": {
+    "file": "assets/Bioinsight-LV12sOqu.svg",
+    "src": "src/assets/Bioinsight.svg"
+  },
+  "src/images/Atlas03.jpg": {
+    "file": "assets/Atlas03-DE07fHfb.jpg",
+    "src": "src/images/Atlas03.jpg"
+  },
+  "src/images/Electrodos.jpg": {
+    "file": "assets/Electrodos-DYYqP2GR.jpg",
+    "src": "src/images/Electrodos.jpg"
+  },
+  "src/images/Inyector02.jpg": {
+    "file": "assets/Inyector02-BFtZ--22.jpg",
+    "src": "src/images/Inyector02.jpg"
+  },
+  "src/images/Inyector03.jpg": {
+    "file": "assets/Inyector03-99zKfqbM.jpg",
+    "src": "src/images/Inyector03.jpg"
+  },
+  "src/images/Microalga02.jpg": {
+    "file": "assets/Microalga02-Bamu9Zik.jpg",
+    "src": "src/images/Microalga02.jpg"
+  },
+  "src/images/Microalga06.jpg": {
+    "file": "assets/Microalga06-BmYIvYDl.jpg",
+    "src": "src/images/Microalga06.jpg"
+  },
+  "src/images/Modbus02.jpg": {
+    "file": "assets/Modbus02-NooVOCL8.jpg",
+    "src": "src/images/Modbus02.jpg"
+  },
+  "src/images/Modbus03.jpg": {
+    "file": "assets/Modbus03-GSH3Hhtl.jpg",
+    "src": "src/images/Modbus03.jpg"
+  },
+  "src/images/Modbus04.jpg": {
+    "file": "assets/Modbus04-DCkQs_V9.jpg",
+    "src": "src/images/Modbus04.jpg"
+  },
+  "src/images/Reactor01.jpg": {
+    "file": "assets/Reactor01-z9oCh_tu.jpg",
+    "src": "src/images/Reactor01.jpg"
+  },
+  "src/images/Remediacion02.jpg": {
+    "file": "assets/Remediacion02-DeyG0iCP.jpg",
+    "src": "src/images/Remediacion02.jpg"
+  },
+  "src/images/Sensores01.jpg": {
+    "file": "assets/Sensores01-B676Dcvt.jpg",
+    "src": "src/images/Sensores01.jpg"
+  },
+  "src/images/Turbidez01.jpg": {
+    "file": "assets/Turbidez01-BEIEgiYC.jpg",
+    "src": "src/images/Turbidez01.jpg"
+  },
+  "src/images/UANL-FA01.jpg": {
+    "file": "assets/UANL-FA01-BQdSa7qt.jpg",
+    "src": "src/images/UANL-FA01.jpg"
+  }
+}
