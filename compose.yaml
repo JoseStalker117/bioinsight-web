@@ -1,0 +1,23 @@
+services:
+  Django:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=sqlite:///db.sqlite3
+    command: python manage.py runserver
+
+  Vite:
+    build:
+      context: .
+      dockerfile: Dockerfile2
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ./react/src:/assets/react/src
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
