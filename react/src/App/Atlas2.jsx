@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import NavComponent from "../Components/Nav";
-import axios from "axios";
+import { apiGet, API_ENDPOINTS } from "../utils/apiConfig";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
 
 function AreaSensorChart({ title, data, keys, colors }) {
@@ -36,37 +36,27 @@ const Atlas2 = () => {
   const [rawData, setRawData] = useState([]);
 
   useEffect(() => {
-    const token = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('idToken='))
-      ?.split('=')[1];
+    const fetchData = async () => {
+      try {
+        const response = await apiGet(API_ENDPOINTS.MODULO2);
+        const rawData = response;
+        setRawData(rawData);
+        const formattedData = {
+          CO2: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), CO2: item.CO2, timestamp: item.timestamp })),
+          DO: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), DO: item.DO, timestamp: item.timestamp })),
+          EC: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), EC: item.EC, timestamp: item.timestamp })),
+          HUM: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), HUM: item.HUM, timestamp: item.timestamp })),
+          PH: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), PH: item.PH, timestamp: item.timestamp })),
+          RTD: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), RTD: item.RTD, timestamp: item.timestamp })),
+        };
 
-    if (token) {
-      axios.get("http://127.0.0.1:8000/rest/modulo2", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        }
-      })
-        .then(response => {
-          const rawData = response.data;
-          setRawData(rawData);
-          const formattedData = {
-            CO2: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), CO2: item.CO2, timestamp: item.timestamp })),
-            DO: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), DO: item.DO, timestamp: item.timestamp })),
-            EC: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), EC: item.EC, timestamp: item.timestamp })),
-            HUM: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), HUM: item.HUM, timestamp: item.timestamp })),
-            PH: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), PH: item.PH, timestamp: item.timestamp })),
-            RTD: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), RTD: item.RTD, timestamp: item.timestamp })),
-          };
+        setSensorData(formattedData);
+      } catch (error) {
+        console.error("Error al obtener los datos del sensor:", error.message);
+      }
+    };
 
-          setSensorData(formattedData);
-        })
-        .catch(error => {
-          console.error("Error al obtener los datos del sensor:", error);
-        });
-    } else {
-      console.error("No se encontró el token en localStorage.");
-    }
+    fetchData();
   }, []);
 
   // Función para obtener el año y semana ISO de una fecha

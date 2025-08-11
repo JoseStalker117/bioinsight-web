@@ -3,6 +3,7 @@ import { Form, Input, Button, Select } from "antd";
 import NavComponent from "../Components/Nav";
 import { ClearOutlined } from "@ant-design/icons";
 import Swal from "sweetalert2";
+import { apiFetch, API_ENDPOINTS } from "../utils/apiConfig";
 
 const { Option } = Select;
 
@@ -25,8 +26,6 @@ const NewUser = () => {
   };
 
   const handleSubmit = async () => {
-    const token = document.cookie.split('; ').find(row => row.startsWith('idToken='))?.split('=')[1];
-
     if (!formData.username || !formData.nombre || !formData.apellidos) {
       Swal.fire({
         icon: 'error',
@@ -37,54 +36,40 @@ const NewUser = () => {
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/rest/admin-adduser', {
+      const data = await apiFetch(API_ENDPOINTS.ADMIN_ADDUSER, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Exito',
-          text: `Usuario creado exitosamente. La contraseña es: ${data.password}`,
-        });
-        setFormData({
-          username: "",
-          nombre: "",
-          apellidos: "",
-          admin: false,
-        });
-        form.resetFields();
-        setErrorMessage("");
-      } else {
-        if (data.error && data.error.includes('EMAIL_EXISTS')) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'El Usuario ya está registrado. Intenta con otro.',
-            confirmButtonText: 'Aceptar',
-          });
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: data.error || 'Ocurrió un error al registrar al usuario.',
-            confirmButtonText: 'Aceptar',
-          });
-        }
-      }
-    } catch (error) {
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Hubo un error al crear el usuario',
+        icon: 'success',
+        title: 'Exito',
+        text: `Usuario creado exitosamente. La contraseña es: ${data.password}`,
       });
+      setFormData({
+        username: "",
+        nombre: "",
+        apellidos: "",
+        admin: false,
+      });
+      form.resetFields();
+      setErrorMessage("");
+    } catch (error) {
+      if (error.message && error.message.includes('EMAIL_EXISTS')) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'El Usuario ya está registrado. Intenta con otro.',
+          confirmButtonText: 'Aceptar',
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.message || 'Ocurrió un error al registrar al usuario.',
+          confirmButtonText: 'Aceptar',
+        });
+      }
     }
   };
 

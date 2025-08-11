@@ -6,6 +6,7 @@ import NavComponent from "../Components/Nav";
 import Logo from "../assets/Bioinsight.svg";
 import Swal from "sweetalert2";
 import { PhoneOutlined } from "@ant-design/icons";
+import { apiFetch, API_ENDPOINTS } from "../utils/apiConfig";
 
 const { Title } = Typography;
 
@@ -29,30 +30,17 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchLinkedServices = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/rest/get-linked-services", {
+        const data = await apiFetch(API_ENDPOINTS.GET_LINKED_SERVICES, {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
         });
 
-        const data = await response.json();
-
-        if (response.ok) {
-          const linkedServices = data.data || {};
-          setIsLinked({
-            sms: !!linkedServices.phone_number,
-            google: !!linkedServices.google,
-            microsoft: !!linkedServices.microsoft,
-            github: !!linkedServices.github,
-          });
-        } else {
-          Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: data.error || "Hubo un error al obtener los servicios vinculados.",
-          });
-        }
+        const linkedServices = data.data || {};
+        setIsLinked({
+          sms: !!linkedServices.phone_number,
+          google: !!linkedServices.google,
+          microsoft: !!linkedServices.microsoft,
+          github: !!linkedServices.github,
+        });
       } catch (error) {
         Swal.fire({
           icon: "error",
@@ -80,40 +68,21 @@ const EditProfile = () => {
     }
 
     try {
-      const token = document.cookie.split("; ").find((row) => row.startsWith("idToken="))?.split("=")[1];
-      if (!token) {
-        throw new Error("No se encontró el token de autenticación.");
-      }
-
-      const response = await fetch("http://127.0.0.1:8000/rest/link-oauth", {
+      const data = await apiFetch(API_ENDPOINTS.LINK_OAUTH, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           phone_number: `${countryCode}${phoneNumber}`,  
           provider: 'phone_number',  
         }),
       });
 
-      const data = await response.json();
+      Swal.fire({
+        icon: "success",
+        title: "Número vinculado",
+        text: "El número ha sido vinculado exitosamente.",
+      });
 
-      if (response.ok) {
-        Swal.fire({
-          icon: "success",
-          title: "Número vinculado",
-          text: "El número ha sido vinculado exitosamente.",
-        });
-
-        setIsModalVisible(false);
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: data.error || "Hubo un error al vincular el número.",
-        });
-      }
+      setIsModalVisible(false);
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -167,15 +136,10 @@ const EditProfile = () => {
       }
 
       try {
-        const response = await fetch("http://127.0.0.1:8000/rest/update-profile", {
+        const data = await apiFetch(API_ENDPOINTS.UPDATE_PROFILE, {
           method: "PUT",
           body: formData,
-          headers: {
-            "Authorization": `Bearer ${idToken}`
-          },
         });
-
-        const data = await response.json();
 
         if (data.message === "Perfil actualizado exitosamente") {
           Swal.fire({
@@ -251,18 +215,13 @@ const EditProfile = () => {
     if (!newPassword) return; 
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/rest/change-password", {
+      const data = await apiFetch(API_ENDPOINTS.CHANGE_PASSWORD, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${idToken}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           current_password: currentPassword,
           new_password: newPassword,
         }),
       });
-      const data = await response.json();
 
       if (data.message === "Contraseña actualizada exitosamente") {
         Swal.fire({
@@ -288,14 +247,9 @@ const EditProfile = () => {
 
   const handleResendConfirmation = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/rest/resend-email", {
+      const data = await apiFetch(API_ENDPOINTS.RESEND_EMAIL, {
         method: "GET",
-        headers: {
-          "Authorization": `Bearer ${idToken}`, 
-        },
       });
-
-      const data = await response.json();
 
       if (data.message === "Correo de verificación reenviado exitosamente") {
         Swal.fire({

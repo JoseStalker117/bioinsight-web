@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import NavComponent from "../Components/Nav";
-import axios from "axios";
+import { apiGet, API_ENDPOINTS } from "../utils/apiConfig";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
 
 function SensorChart({ title, data, keys, colors }) {
@@ -51,60 +51,50 @@ function Modbus() {
   const [rawData, setRawData] = useState([]);
 
   useEffect(() => {
-    const token = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('idToken='))
-      ?.split('=')[1];
+    const fetchData = async () => {
+      try {
+        const response = await apiGet(API_ENDPOINTS.MODBUSDATA);
+        const rawData = Object.values(response);
+        setRawData(rawData);
+        const formattedData = {
+          CO2: rawData.map(item => ({
+            time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
+            CO2_IN: item.CO2_IN,
+            CO2_OUT: item.CO2_OUT,
+            timestamp: item.timestamp
+          })),
+          NO2: rawData.map(item => ({
+            time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
+            NO2_IN: item.NO2_IN,
+            NO2_OUT: item.NO2_OUT,
+            timestamp: item.timestamp
+          })),
+          SO2: rawData.map(item => ({
+            time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
+            SO2_IN: item.SO2_IN,
+            SO2_OUT: item.SO2_OUT,
+            timestamp: item.timestamp
+          })),
+          PAR: rawData.map(item => ({
+            time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
+            PAR: item.PAR,
+            timestamp: item.timestamp
+          })),
+          TEMP: rawData.map(item => ({
+            time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
+            TEMP_1: item.TEMP_1,
+            TEMP_2: item.TEMP_2,
+            timestamp: item.timestamp
+          })),
+        };
 
-    if (token) {
-      axios.get("http://127.0.0.1:8000/rest/modbusdata", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        }
-      })
-        .then(response => {
-          const rawData = Object.values(response.data);
-          setRawData(rawData);
-          const formattedData = {
-            CO2: rawData.map(item => ({
-              time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
-              CO2_IN: item.CO2_IN,
-              CO2_OUT: item.CO2_OUT,
-              timestamp: item.timestamp
-            })),
-            NO2: rawData.map(item => ({
-              time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
-              NO2_IN: item.NO2_IN,
-              NO2_OUT: item.NO2_OUT,
-              timestamp: item.timestamp
-            })),
-            SO2: rawData.map(item => ({
-              time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
-              SO2_IN: item.SO2_IN,
-              SO2_OUT: item.SO2_OUT,
-              timestamp: item.timestamp
-            })),
-            PAR: rawData.map(item => ({
-              time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
-              PAR: item.PAR,
-              timestamp: item.timestamp
-            })),
-            TEMP: rawData.map(item => ({
-              time: item.timestamp ? new Date(item.timestamp * 1000).toLocaleString() : "Sin fecha",
-              TEMP_1: item.TEMP_1,
-              TEMP_2: item.TEMP_2,
-              timestamp: item.timestamp
-            })),
-          };
+        setSensorData(formattedData);
+      } catch (error) {
+        console.error("Error al obtener los datos del sensor:", error.message);
+      }
+    };
 
-          setSensorData(formattedData);
-        })
-        .catch(error => {
-          console.error("Error al obtener los datos del sensor:", error);
-        });
-    } else {
-      console.error("No se encontró el token en localStorage.");
-    }
+    fetchData();
   }, []);
 
   // Función para obtener el año y semana ISO de una fecha

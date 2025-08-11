@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Table, Button, Input, Space, Modal, Form, Select } from "antd";
 import { SearchOutlined, DeleteOutlined, RetweetOutlined } from "@ant-design/icons";
 import NavComponent from "../Components/Nav";
-import axios from "axios";
+import { apiGet, apiPost, apiPut, apiDelete, API_ENDPOINTS } from "../utils/apiConfig";
 import Swal from "sweetalert2";
 
 const { Option } = Select;
@@ -17,22 +17,15 @@ const ManageUser = () => {
   useEffect(() => {
     const fetchUsuarios = async () => {
       try {
-        const token = document.cookie.split("; ").find((row) => row.startsWith("idToken="))?.split("=")[1];
-        if (!token) {
-          throw new Error("No se encontró el token de autenticación.");
-        }
-
-        const response = await axios.get("http://127.0.0.1:8000/rest/admin-usuarios", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiGet(API_ENDPOINTS.ADMIN_USUARIOS);
 
         console.log("respuesta de la api", response);
-        if (Array.isArray(response.data)) {
-          setUsuarios(response.data);
+        if (Array.isArray(response)) {
+          setUsuarios(response);
         } else {
           throw new Error("La respuesta no es un array");
         }
-        console.log("Respuesta de la API:", response.data);
+        console.log("Respuesta de la API:", response);
       } catch (error) {
         Swal.fire("Error", "No se pudieron cargar los usuarios.", "error");
       } finally {
@@ -67,38 +60,20 @@ const ManageUser = () => {
         return;  
       }
 
-      const token = document.cookie.split("; ").find((row) => row.startsWith("idToken="))?.split("=")[1];
-      if (!token) {
-        throw new Error("No se encontró el token de autenticación.");
-      }
+      const response = await apiPost(API_ENDPOINTS.ADMIN_RESTORE, { uid: userId });
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/rest/admin-restore",
-        { uid: userId },  
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (response.data && response.data.new_password) {
+      if (response && response.new_password) {
         Swal.fire({
           title: "Éxito",
-          html: `Contraseña restablecida exitosamente.<br>La nueva contraseña es: <strong>${response.data.new_password}</strong>`,
+          html: `Contraseña restablecida exitosamente.<br>La nueva contraseña es: <strong>${response.new_password}</strong>`,
           icon: "success",
         });
       } else {
         Swal.fire("Error", "No se pudo restablecer la contraseña.", "error");
       }
     } catch (error) {
-      if (error.response) {
-        console.log("Server responded with:", error.response.data);
-        Swal.fire("Error", error.response.data.error || "No se pudo restablecer la contraseña.", "error");
-      } else {
-        Swal.fire("Error", "No se pudo restablecer la contraseña.", "error");
-      }
+      console.log("Server responded with:", error);
+      Swal.fire("Error", error.message || "No se pudo restablecer la contraseña.", "error");
     }
   };
 
@@ -115,14 +90,8 @@ const ManageUser = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const token = document.cookie.split("; ").find((row) => row.startsWith("idToken="))?.split("=")[1];
-          if (!token) {
-            throw new Error("No se encontró el token de autenticación.");
-          }
-
-          await axios.delete(`http://127.0.0.1:8000/rest/admin-restore`, {
-            params: { uid: id },  
-            headers: { Authorization: `Bearer ${token}` },
+          await apiDelete(API_ENDPOINTS.ADMIN_RESTORE, {
+            params: { uid: id },
           });
 
           setUsuarios(usuarios.filter((user) => user.id !== id));
@@ -147,21 +116,11 @@ const ManageUser = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const token = document.cookie.split("; ").find((row) => row.startsWith("idToken="))?.split("=")[1];
-          if (!token) {
-            throw new Error("No se encontró el token de autenticación.");
-          }
-
-          await axios.put(
-            `http://127.0.0.1:8000/rest/admin-usuarios`,
-            {
-              user_id: id,
-              admin: newRole === "Administrador",
-            },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+          await apiPut(API_ENDPOINTS.ADMIN_USUARIOS, {
+            user_id: id,
+            admin: newRole === "Administrador",
+          });
+          
           setUsuarios(usuarios.map(user => user.id === id ? { ...user, admin: newRole === "Administrador" } : user));
           Swal.fire("Éxito", "Rol actualizado correctamente.", "success");
         } catch (error) {

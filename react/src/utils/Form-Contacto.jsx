@@ -3,22 +3,18 @@ import { Button, Form, Input } from "antd";
 import Swal from "sweetalert2";
 import '../css/Form-Contacto.css';
 import { UserOutlined, MailOutlined } from "@ant-design/icons";
+import { apiFetch, API_ENDPOINTS } from "./apiConfig";
 
 const FormContactoComponent = () => {
     const [form] = Form.useForm();
 
     async function sendContactMessage(nombre, email, mensaje) {
-        const response = await fetch('http://127.0.0.1:8000/rest/form', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ nombre, email, mensaje }),
-        });
+        try {
+            const data = await apiFetch(API_ENDPOINTS.FORM, {
+                method: 'POST',
+                body: JSON.stringify({ nombre, email, mensaje }),
+            });
 
-        const data = await response.json(); 
-
-        if (response.ok) {
             Swal.fire({
                 icon: "success",
                 title: "¡Mensaje Enviado!",
@@ -26,10 +22,10 @@ const FormContactoComponent = () => {
                 confirmButtonText: "Aceptar",
             });
             form.resetFields();
-        } else {
-            console.error(`Error al enviar mensaje de contacto: ${data.error}`);
+            return data;
+        } catch (error) {
+            console.error(`Error al enviar mensaje de contacto: ${error.message}`);
         }
-        return data;
     }
 
     return (

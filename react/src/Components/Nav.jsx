@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Menu } from 'antd';
 import Swal from 'sweetalert2';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { apiFetch, API_ENDPOINTS } from "../utils/apiConfig";
 import {
   MenuOutlined, UserAddOutlined, DatabaseOutlined,
   EditOutlined, MessageOutlined, UsergroupAddOutlined,
@@ -87,15 +88,12 @@ const NavComponent = ({ children }) => {
     });
 
     if (result.isConfirmed) {
-      const response = await fetch('http://127.0.0.1:8000/rest/logout', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      });
-      const data = await response.json();
-      if (response.ok) {
+      try {
+        await apiFetch(API_ENDPOINTS.LOGOUT, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
         document.cookie = "idToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         document.cookie = "userData=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
         document.cookie = "idToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname;
@@ -108,7 +106,7 @@ const NavComponent = ({ children }) => {
           confirmButtonText: "Aceptar",
         });
         navigate("/");
-      } else {
+      } catch (error) {
         Swal.fire({
           title: 'Error',
           text: 'Hubo un problema al cerrar sesión.',

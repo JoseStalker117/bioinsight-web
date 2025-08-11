@@ -6,6 +6,7 @@ import {
 } from "@ant-design/icons";
 import NavComponent from "../Components/Nav";
 import Swal from "sweetalert2";
+import { apiFetch, API_ENDPOINTS } from "../utils/apiConfig";
 
 const Buzon = () => {
   const [mensajes, setMensajes] = useState([]);
@@ -16,18 +17,10 @@ const Buzon = () => {
 
   async function getBuzon() {
     try {
-      const idToken = document.cookie.split('; ').find(row => row.startsWith('idToken='))?.split('=')[1];
-
-      const response = await fetch('http://127.0.0.1:8000/rest/admin-buzon', {
+      const data = await apiFetch(API_ENDPOINTS.ADMIN_BUZON, {
         method: 'GET',
         credentials: 'include',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        },
       });
-
-      const data = await response.json();
 
       const mensajesArray = Object.entries(data).map(([id, msg]) => ({
         key: id,
@@ -45,31 +38,16 @@ const Buzon = () => {
 
   // Función para eliminar mensaje
   const handleDelete = async (mensajeId) => {
-    const idToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('idToken='))
-      ?.split('=')[1];
-
     try {
-      const response = await fetch(`http://127.0.0.1:8000/rest/admin-buzon?contacto_id=${mensajeId}`, {
+      const data = await apiFetch(`${API_ENDPOINTS.ADMIN_BUZON}?contacto_id=${mensajeId}`, {
         method: "DELETE",
         credentials: "include",
-        headers: {
-          "Authorization": `Bearer ${idToken}`,
-          "Content-Type": "application/json",
-        },
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setMensajes((prevMensajes) => prevMensajes.filter(msg => msg.key !== mensajeId));
-        Swal.fire("Eliminado", "El mensaje ha sido eliminado correctamente.", "success");
-      } else {
-        Swal.fire("Error", data.error || "No se pudo eliminar el mensaje.", "error");
-      }
+      setMensajes((prevMensajes) => prevMensajes.filter(msg => msg.key !== mensajeId));
+      Swal.fire("Eliminado", "El mensaje ha sido eliminado correctamente.", "success");
     } catch (error) {
-      Swal.fire("Error", "Hubo un problema al intentar eliminar el mensaje.", "error");
+      Swal.fire("Error", error.message || "Hubo un problema al intentar eliminar el mensaje.", "error");
     }
   };
 

@@ -3,7 +3,7 @@ import { Table, Button, Input, Space, Modal, Form, InputNumber } from "antd";
 import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import NavComponent from "../Components/Nav";
 import Swal from "sweetalert2";
-import axios from "axios";
+import { apiGet, apiPost, apiPut, apiDelete, API_ENDPOINTS } from "../utils/apiConfig";
 
 const ModbusEdit = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -22,16 +22,13 @@ const ModbusEdit = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = getToken();
-        const response = await axios.get("http://127.0.0.1:8000/rest/modbusdata", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await apiGet(API_ENDPOINTS.MODBUSDATA);
 
-        if (!Array.isArray(response.data)) {
+        if (!Array.isArray(response)) {
           throw new Error("La respuesta de la API no es un array.");
         }
 
-        const formattedData = response.data.map((item, index) => ({
+        const formattedData = response.map((item, index) => ({
           key: index.toString(),
           id: item.id,
           timestamp: item.timestamp ? Number(item.timestamp) : 0,
@@ -75,7 +72,6 @@ const ModbusEdit = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      const token = getToken();
 
       const filteredData = { ...values };
       delete filteredData.id;
@@ -87,13 +83,9 @@ const ModbusEdit = () => {
         data: filteredData,
       };
 
-      const response = await axios.put("http://127.0.0.1:8000/rest/rtd", updatedData, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-      });
+      const response = await apiPut(API_ENDPOINTS.RTD, updatedData);
 
-      if (response.status === 200) {
+      if (response) {
         Swal.fire("Éxito", "Datos actualizados correctamente", "success");
         setIsModalVisible(false);
         setDatos((prevDatos) =>
@@ -113,11 +105,7 @@ const ModbusEdit = () => {
       const values = await form.validateFields();
 
       console.log("datos de value:", values)
-      const token = getToken();
-      if (!token) {
-        Swal.fire("Error", "No hay token de autenticación.", "error");
-        return;
-      }
+      
       const newRecord = {
         module_name: "Modbus",
         doc_data: new Date().getTime().toString(),
@@ -126,16 +114,12 @@ const ModbusEdit = () => {
 
       console.log("Enviando datos:", JSON.stringify(newRecord));
 
-      const response = await axios.post("http://127.0.0.1:8000/rest/rtd", newRecord, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await apiPost(API_ENDPOINTS.RTD, newRecord);
 
-      if (response.status === 201) {
+      if (response) {
         Swal.fire("Éxito", "Registro creado correctamente", "success");
         setIsModalVisible(false);
-        setDatos([...datos, { ...values, id: response.data.id, fecha: new Date().toLocaleString() }]);
+        setDatos([...datos, { ...values, id: response.id, fecha: new Date().toLocaleString() }]);
       }
     } catch (error) {
       console.error("Error al crear registro:", error);
@@ -161,7 +145,6 @@ const ModbusEdit = () => {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const token = getToken();
           const idsToDelete = selectedRowKeys.map((key) => {
             const record = datos.find((item) => item.key === key);
             return record.id;
@@ -169,15 +152,14 @@ const ModbusEdit = () => {
 
           console.log("ids to delete: ", idsToDelete)
 
-          const response = await axios.delete("http://127.0.0.1:8000/rest/rtd", {
-            headers: { Authorization: `Bearer ${token}` },
+          const response = await apiDelete(API_ENDPOINTS.RTD, {
             params: {
               module_name: "Modbus",
               doc_data: idsToDelete,
             },
           });
 
-          if (response.status === 200) {
+          if (response) {
             Swal.fire("Eliminado", `${selectedRowKeys.length} registro(s) han sido eliminados.`, "success");
             setDatos(datos.filter((item) => !selectedRowKeys.includes(item.key)));
             setSelectedRowKeys([]);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import HeaderDashboard from "../utils/HeaderDashboard";
-import axios from "axios";
+import { apiGet, API_ENDPOINTS } from "../utils/apiConfig";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
 
 interface SensorData {
@@ -53,34 +53,27 @@ const Modulo2 = () => {
   })
 
   useEffect(() => {
-    const idToken = localStorage.getItem("authToken");
-    console.log("token:", idToken);
-    if (idToken) {
-      axios.get("http://127.0.0.1:8000/rest/modulo2", {
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        }
-      })
-        .then(response => {
-          console.log("Respuesta del backend:", response.data);
-          const rawData = response.data as SensorData[];
-          const formattedData: FormattedSensorData = {
-            CO2: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), CO2: item.CO2 })),
-            DO: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), DO: item.DO })),
-            EC: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), EC: item.EC })),
-            HUM: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), HUM: item.HUM })),
-            PH: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), PH: item.PH })),
-            RTD: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), RTD: item.RTD })),
-          };                
+    const fetchData = async () => {
+      try {
+        const response = await apiGet(API_ENDPOINTS.MODULO2);
+        console.log("Respuesta del backend:", response);
+        const rawData = response as SensorData[];
+        const formattedData: FormattedSensorData = {
+          CO2: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), CO2: item.CO2 })),
+          DO: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), DO: item.DO })),
+          EC: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), EC: item.EC })),
+          HUM: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), HUM: item.HUM })),
+          PH: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), PH: item.PH })),
+          RTD: rawData.map((item) => ({ time: new Date(item.timestamp * 1000).toLocaleString(), RTD: item.RTD })),
+        };                
 
-          setSensorData(formattedData);
-        })
-        .catch(error => {
-          console.error("Error al obtener los datos del sensor:", error);
-        });
-    } else {
-      console.error("No se encontró el token en localStorage.");
-    }
+        setSensorData(formattedData);
+      } catch (error) {
+        console.error("Error al obtener los datos del sensor:", error);
+      }
+    };
+
+    fetchData();
   }, []);
 
   return (

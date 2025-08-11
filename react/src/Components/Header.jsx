@@ -5,6 +5,7 @@ import { LoginOutlined, MenuOutlined, GoogleOutlined, GithubOutlined, WindowsOut
 import Logo from "../assets/Bioinsight.svg";
 import '../css/Header.css'
 import Swal from "sweetalert2";
+import { apiFetch, API_ENDPOINTS } from "../utils/apiConfig";
 const { Header } = Layout;
 
 const HeaderComponent = () => {
@@ -83,35 +84,21 @@ const HeaderComponent = () => {
                 return;
             }
 
-            const response = await fetch('http://127.0.0.1:8000/rest/login', {
+            const data = await apiFetch(API_ENDPOINTS.LOGIN, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({ email, password }),
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                document.cookie = `idToken=${data.idToken}; path=/`;
-                Swal.fire({
-                    icon: "success",
-                    title: "¡Inicio de Sesion correcto!",
-                    text: `Bienvenido ${username}`,
-                    confirmButtonText: "Aceptar",
-                });
-                closeLoginModal();
-                getProfile();
-                navigate('/modbus');
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: `${data.error}`,
-                    confirmButtonText: 'Aceptar',
-                });
-            }
+            document.cookie = `idToken=${data.idToken}; path=/`;
+            Swal.fire({
+                icon: "success",
+                title: "¡Inicio de Sesion correcto!",
+                text: `Bienvenido ${username}`,
+                confirmButtonText: "Aceptar",
+            });
+            closeLoginModal();
+            getProfile();
+            navigate('/modbus');
         } catch (error) {
             Swal.fire({
                 icon: 'error',
@@ -127,21 +114,11 @@ const HeaderComponent = () => {
         if (!token) { return; }
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/rest/get-profile', {
+            const data = await apiFetch(API_ENDPOINTS.GET_PROFILE, {
                 method: 'GET',
                 credentials: 'include',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
             });
 
-            if (!response.ok) {
-                await response.json();
-                return;
-            }
-
-            const data = await response.json();
             document.cookie = `userData=${JSON.stringify(data.user)}; path=/`;
             setUser(data.user);
         } catch (error) {
@@ -156,12 +133,8 @@ const HeaderComponent = () => {
     async function registerUser(values) {
         try {
             const { nombreReg, apellidosReg, usernameReg, passwordReg } = values;
-            const response = await fetch('http://127.0.0.1:8000/rest/register', {
+            const data = await apiFetch(API_ENDPOINTS.REGISTER, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
                 body: JSON.stringify({
                     nombreReg,
                     apellidosReg,
@@ -170,41 +143,30 @@ const HeaderComponent = () => {
                 }),
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Registro Exitoso',
-                    text: 'Usuario registrado correctamente',
-                    confirmButtonText: 'Aceptar',
-                });
-                setIsLogin(true);
-                form.resetFields();
-            } else {
-                if (data.error && data.error.includes('EMAIL_EXISTS')) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'El Usuario ya está registrado. Intenta con otro.',
-                        confirmButtonText: 'Aceptar',
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: data.error || 'Ocurrió un error al registrar al usuario.',
-                        confirmButtonText: 'Aceptar',
-                    });
-                }
-            }
-        } catch (error) {
             Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: "Error en la conexión al servidor",
+                icon: 'success',
+                title: 'Registro Exitoso',
+                text: 'Usuario registrado correctamente',
                 confirmButtonText: 'Aceptar',
             });
+            setIsLogin(true);
+            form.resetFields();
+        } catch (error) {
+            if (error.message && error.message.includes('EMAIL_EXISTS')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'El Usuario ya está registrado. Intenta con otro.',
+                    confirmButtonText: 'Aceptar',
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Ocurrió un error al registrar al usuario.',
+                    confirmButtonText: 'Aceptar',
+                });
+            }
         }
     };
 

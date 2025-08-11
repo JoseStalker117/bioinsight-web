@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import '../css/Dashboard.css';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
 import HeaderDashboard from "../utils/HeaderDashboard";
-import axios from "axios";
+import { apiGet, API_ENDPOINTS } from "../utils/apiConfig";
 
 // Definimos la interfaz para los datos del sensor
 interface SensorData {
@@ -57,43 +57,27 @@ function Modbus() {
   });
 
   useEffect(() => {
-    const idToken = localStorage.getItem("authToken");
-    console.log("token:", idToken);
-    if (idToken) {
-      axios.get("http://127.0.0.1:8000/rest/modbusdata", {
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        }
-      })
-        .then(response => {
-          console.log("Respuesta del backend:", response.data);
+    const fetchData = async () => {
+      try {
+        const response = await apiGet(API_ENDPOINTS.MODBUSDATA);
+        console.log("Respuesta del backend:", response);
 
-          const rawData = Object.values(response.data)[0] as SensorData;
-          const formattedData: FormattedSensorData = {
-            CO2: [{ time: "Ahora", CO2_IN: rawData.CO2_IN, CO2_OUT: rawData.CO2_OUT }],
-            NO2: [{ time: "Ahora", NO2_IN: rawData.NO2_IN, NO2_OUT: rawData.NO2_OUT }],
-            SO2: [{ time: "Ahora", SO2_IN: rawData.SO2_IN, SO2_OUT: rawData.SO2_OUT }],
-            PAR: [{ time: "Ahora", PAR: rawData.PAR }],
-            TEMP: [{ time: "Ahora", TEMP_1: rawData.TEMP_1, TEMP_2: rawData.TEMP_2 }],
-          };
-          // const rawData = response.data as { [key: string]: SensorData };
+        const rawData = Object.values(response)[0] as SensorData;
+        const formattedData: FormattedSensorData = {
+          CO2: [{ time: "Ahora", CO2_IN: rawData.CO2_IN, CO2_OUT: rawData.CO2_OUT }],
+          NO2: [{ time: "Ahora", NO2_IN: rawData.NO2_IN, NO2_OUT: rawData.NO2_OUT }],
+          SO2: [{ time: "Ahora", SO2_IN: rawData.SO2_IN, SO2_OUT: rawData.SO2_OUT }],
+          PAR: [{ time: "Ahora", PAR: rawData.PAR }],
+          TEMP: [{ time: "Ahora", TEMP_1: rawData.TEMP_1, TEMP_2: rawData.TEMP_2 }],
+        };
 
-          // const formattedData: FormattedSensorData = {
-          //   CO2: rawData.CO2.map(item => ({ time: item.timestamp, CO2_IN: item.CO2_IN, CO2_OUT: item.CO2_OUT })),
-          //   NO2: rawData.NO2.map(item => ({ time: item.timestamp, NO2_IN: item.NO2_IN, NO2_OUT: item.NO2_OUT })),
-          //   SO2: rawData.SO2.map(item => ({ time: item.timestamp, SO2_IN: item.SO2_IN, SO2_OUT: item.SO2_OUT })),
-          //   PAR: rawData.PAR.map(item => ({ time: item.timestamp, PAR: item.PAR })),
-          //   TEMP: rawData.TEMP.map(item => ({ time: item.timestamp, TEMP_1: item.TEMP_1, TEMP_2: item.TEMP_2 })),
-          // };
+        setSensorData(formattedData);
+      } catch (error) {
+        console.error("Error al obtener los datos del sensor:", error);
+      }
+    };
 
-          setSensorData(formattedData);
-        })
-        .catch(error => {
-          console.error("Error al obtener los datos del sensor:", error);
-        });
-    } else {
-      console.error("No se encontró el token en localStorage.");
-    }
+    fetchData();
   }, []);
 
 

@@ -4,7 +4,7 @@ import { LoginOutlined, MenuOutlined, FacebookOutlined, InstagramOutlined, MailO
 import { useLocation, useNavigate } from "react-router-dom";
 import "../css/Header.css";
 import Logo from "../assets/Bioinsight.svg";
-import axios from 'axios'
+import { apiPost, API_ENDPOINTS } from './apiConfig'
 
 const { Header: AntHeader } = Layout;
 
@@ -49,9 +49,9 @@ const AppHeader: React.FC = () => {
 
   const onFinishLogin = async (values) => {
     try {
-      const response = await axios.post('http://localhost:8000/rest/login', values, { withCredentials: true });
-      console.log("Respuesta del servidor:", response.data);
-      const token = response.data.idToken;
+      const response = await apiPost(API_ENDPOINTS.LOGIN, values);
+      console.log("Respuesta del servidor:", response);
+      const token = response.idToken;
       console.log("Token guardado:", token);
 
       localStorage.setItem("authToken", token); // Guardar token en localStorage
@@ -61,16 +61,14 @@ const AppHeader: React.FC = () => {
     } catch (error: any) {
       console.error('Error al iniciar sesión:', error);
       setErrorMsg(
-        error.response?.data?.message || "Credenciales incorrectas o correo no encontrado"
+        error.message || "Credenciales incorrectas o correo no encontrado"
       );
     }
   };
 
   const onFinishRegister = async (values: { nombre, apellidos, username, password }) => {
     try {
-      await axios.post('http://localhost:8000/rest/register', values, {
-        headers: { "Content-Type": "application/json" },
-      });
+      await apiPost(API_ENDPOINTS.REGISTER, values);
       message.success("Registro exitoso. Ahora puedes iniciar sesión.");
       form.resetFields();
       setErrorMsg(""); 
@@ -78,7 +76,7 @@ const AppHeader: React.FC = () => {
     } catch (error: any) {
       console.error('Error al registrar:', error);
       setErrorMsg(
-        error.response?.data?.message || "Error al registrar usuario. Intenta de nuevo."
+        error.message || "Error al registrar usuario. Intenta de nuevo."
       );
     }
   };

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import HeaderDashboard from "../utils/HeaderDashboard";
-import axios from "axios";
+import { apiGet, API_ENDPOINTS } from "../utils/apiConfig";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
 
 interface SensorData {
@@ -51,36 +51,29 @@ const Modulo1 = () => {
   })
 
   useEffect(() => {
-    const idToken = localStorage.getItem("authToken");
-    console.log("token:", idToken);
-    if (idToken) {
-      axios.get("http://127.0.0.1:8000/rest/modulo1", {
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        }
-      })
-        .then(Response => {
-          console.log("Repuesta del backend:", Response.data);
+    const fetchData = async () => {
+      try {
+        const response = await apiGet(API_ENDPOINTS.MODULO1);
+        console.log("Respuesta del backend:", response);
 
-          const rawData = Object.values(Response.data)[0] as SensorData;
+        const rawData = Object.values(response)[0] as SensorData;
 
-          const formattedData: FormattedSensorData = {
-            CO2: [{ time: "Ahora", CO2: rawData.CO2 }],
-            DO: [{ time: "Ahora", DO: rawData.DO }],
-            EC: [{ time: "Ahora", EC: rawData.EC }],
-            HUM: [{ time: "Ahora", HUM: rawData.HUM }],
-            PH: [{ time: "Ahora", PH: rawData.PH }],
-            RTD: [{ time: "Ahora", RTD: rawData.RTD }],
-          };
+        const formattedData: FormattedSensorData = {
+          CO2: [{ time: "Ahora", CO2: rawData.CO2 }],
+          DO: [{ time: "Ahora", DO: rawData.DO }],
+          EC: [{ time: "Ahora", EC: rawData.EC }],
+          HUM: [{ time: "Ahora", HUM: rawData.HUM }],
+          PH: [{ time: "Ahora", PH: rawData.PH }],
+          RTD: [{ time: "Ahora", RTD: rawData.RTD }],
+        };
 
-          setSensorData(formattedData);
-        })
-        .catch(error => {
-          console.error("Error al obtener los datos del sensor:", error);
-        });
-    } else {
-      console.error("No se encontró el token en localStorage.");
-    }
+        setSensorData(formattedData);
+      } catch (error) {
+        console.error("Error al obtener los datos del sensor:", error);
+      }
+    };
+
+    fetchData();
   }, []);  
 
   return (
