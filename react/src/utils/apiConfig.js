@@ -26,17 +26,21 @@ const apiClient = axios.create({
   baseURL: API_CONFIG.BASE_URL,
   timeout: API_CONFIG.TIMEOUT,
   headers: API_CONFIG.DEFAULT_HEADERS,
+  // Enable cookies to be sent automatically
+  withCredentials: true,
 });
 
-// Request interceptor to add authentication token
+// Request interceptor to add authentication token as fallback
 apiClient.interceptors.request.use(
   (config) => {
+    // Only add Authorization header if cookies are not available
+    // This is a fallback mechanism for cases where cookies might not work
     const token = document.cookie
       .split('; ')
       .find(row => row.startsWith('idToken='))
       ?.split('=')[1];
     
-    if (token) {
+    if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
@@ -131,6 +135,7 @@ export const apiDelete = async (endpoint, config = {}) => {
 
 // Fetch wrapper for backward compatibility
 export const apiFetch = async (endpoint, options = {}) => {
+  // Get token from cookies as fallback for Authorization header
   const token = document.cookie
     .split('; ')
     .find(row => row.startsWith('idToken='))
@@ -141,10 +146,11 @@ export const apiFetch = async (endpoint, options = {}) => {
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      // Only add Authorization header if not already present and token exists
+      ...(token && !options.headers?.Authorization && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
-    credentials: 'include',
+    credentials: 'include', // This ensures cookies are sent automatically
     ...options,
   };
 
@@ -172,4 +178,54 @@ export const getApiUrl = (endpoint) => `${API_CONFIG.BASE_URL}${endpoint}`;
 export const setBaseUrl = (newBaseUrl) => {
   API_CONFIG.BASE_URL = newBaseUrl;
   apiClient.defaults.baseURL = newBaseUrl;
+};
+
+// Cookie utility functions
+export const getCookie = (name) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+};
+
+export const setCookie = (name, value, options = {}) => {
+  const defaultOptions = {
+    path: '/',
+    maxAge: 3600, // 1 hour
+    sameSite: 'Lax',
+    ...options
+  };
+  
+  let cookieString = `${name}=${value}`;
+  
+  if (defaultOptions.path) cookieString += `; path=${defaultOptions.path}`;
+  if (defaultOptions.maxAge) cookieString += `; max-age=${defaultOptions.maxAge}`;
+  if (defaultOptions.sameSite) cookieString += `; samesite=${defaultOptions.sameSite}`;
+  if (defaultOptions.secure) cookieString += '; secure';
+  if (defaultOptions.httpOnly) cookieString += '; httponly';
+  
+  document.cookie = cookieString;
+};
+
+export const deleteCookie = (name) => {
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+};
+
+// Check if user is authenticated
+export const isAuthenticated = () => {
+  return !!getCookie('idToken');
+};
+
+// Get user data from cookies
+export const getUserData = () => {
+  const userDataCookie = getCookie('userData');
+  if (userDataCookie) {
+    try {
+      return JSON.parse(userDataCookie);
+    } catch (error) {
+      console.error('Error parsing user data from cookie:', error);
+      return null;
+    }
+  }
+  return null;
 };
